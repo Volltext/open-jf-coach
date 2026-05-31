@@ -35,7 +35,7 @@ import {
 import { KNOT_GUIDES, POSITION_GUIDES, RULE_ENTRIES } from './knowledge';
 import { computeScore, getScoringConfig, resolveFehlerList, sumFehlerpunkte } from './scoring';
 import { extractSyncStateFromApp, initCloudSync, mergeRemoteStateIntoApp } from './cloudSync';
-import { createDefaultState, loadAppState, saveAppState } from './storage';
+import { createDefaultState, loadAppState, saveAppState, normaliseState } from './storage';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
   day: '2-digit',
@@ -58,6 +58,16 @@ function getOrCreateDeviceId() {
   } catch {
     return crypto.randomUUID();
   }
+}
+
+// Schützt CSV-Zellen vor Formel-Injektion (Excel/Sheets führen führende
+// = + @ - bzw. Tab/CR als Formel aus) und maskiert Anführungszeichen.
+function escapeCsvCell(value) {
+  let text = value == null ? '' : String(value);
+  if (/^[=+\-@\t\r]/.test(text)) {
+    text = `'${text}`;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
 }
 
 function formatDuration(ms) {
@@ -784,7 +794,9 @@ function App() {
       try {
         const parsed = JSON.parse(ev.target.result);
         if (parsed && typeof parsed === 'object' && Array.isArray(parsed.members)) {
-          updateState(() => parsed);
+          // Backup-Inhalt vor der Übernahme validieren/reparieren, damit
+          // ungültige oder manipulierte Felder auf sichere Defaults fallen.
+          updateState(() => normaliseState(parsed));
         } else {
           alert('Ungültige Backup-Datei.');
         }
@@ -814,7 +826,7 @@ function App() {
       const scoring = run.scoring?.total ?? '';
       const vorgabe = run.scoring?.vorgabe ?? '';
       const fehler = run.scoring?.fehlerpunkte ?? '';
-      const notes = (run.notes ?? '').replace(/"/g, '""');
+      const notes = run.notes ?? '';
       const lineup = Object.entries(run.lineupSnapshot?.assignments ?? {})
         .filter(([, id]) => Boolean(id))
         .map(([posId, memberId]) => {
@@ -823,10 +835,10 @@ function App() {
           return `${pos?.shortLabel ?? posId}:${name}`;
         })
         .join(' ');
-      rows.push([date, mode, totalSec, scoring, vorgabe, fehler, `"${notes}"`, `"${lineup}"`]);
+      rows.push([date, mode, totalSec, scoring, vorgabe, fehler, notes, lineup]);
     }
 
-    const csv = rows.map((r) => r.join(',')).join('\n');
+    const csv = rows.map((r) => r.map(escapeCsvCell).join(',')).join('\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
