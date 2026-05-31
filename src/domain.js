@@ -10,15 +10,12 @@ export const A_PART_POSITIONS = [
   { id: 'a-schlauchtruppmann', label: 'Schlauchtruppmann (STM)', shortLabel: 'STM', section: 'A-Teil' }
 ];
 
-export const B_PART_POSITIONS = [
-  ...Array.from({ length: 9 }, (_, index) => ({
-    id: `b-laeufer-${index + 1}`,
-    label: `Läufer ${index + 1}`,
-    shortLabel: `L${index + 1}`,
-    section: 'B-Teil'
-  })),
-  { id: 'b-anziehen', label: 'Anziehen', shortLabel: 'Az', section: 'B-Teil' }
-];
+export const B_PART_POSITIONS = Array.from({ length: 9 }, (_, index) => ({
+  id: `b-laeufer-${index + 1}`,
+  label: `Läufer ${index + 1}`,
+  shortLabel: `L${index + 1}`,
+  section: 'B-Teil'
+}));
 
 export const ALL_POSITIONS = [...A_PART_POSITIONS, ...B_PART_POSITIONS];
 
