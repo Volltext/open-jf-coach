@@ -60,7 +60,7 @@ function normaliseStopwatchDraft(candidate) {
   };
 }
 
-function normaliseState(candidate) {
+export function normaliseState(candidate) {
   const defaults = createDefaultState();
   if (!candidate || typeof candidate !== 'object') {
     return defaults;
