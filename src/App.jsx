@@ -260,6 +260,31 @@ function App() {
   }, [appState.stopwatchDraft.isRunning]);
 
   useEffect(() => {
+    if (!appState.stopwatchDraft.isRunning || !navigator.wakeLock) {
+      return undefined;
+    }
+
+    let wakeLock = null;
+    navigator.wakeLock.request('screen').then((lock) => {
+      wakeLock = lock;
+    });
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && navigator.wakeLock) {
+        navigator.wakeLock.request('screen').then((lock) => {
+          wakeLock = lock;
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      wakeLock?.release();
+    };
+  }, [appState.stopwatchDraft.isRunning]);
+
+  useEffect(() => {
     const target = appState.stopwatchDraft.targetSeconds;
     setTargetInput((current) => {
       if (parseTargetToSeconds(current) === target) {
@@ -923,12 +948,10 @@ function App() {
                 const assignedMemberId = appState.lineups.assignments[position.id];
                 const assignedMember = assignedMemberId ? memberMap[assignedMemberId] : null;
                 const isL7 = lineupTab === 'B' && position.id === 'b-laeufer-7';
-                const isAnziehen = position.id === 'b-anziehen';
                 const isTeamMember = lineupTab === 'B' && (position.id === 'b-laeufer-7' || position.id === 'b-laeufer-8');
                 return (
                   <Fragment key={position.id}>
                     {isL7 && <div className="position-section-label">Team-Aufgabe</div>}
-                    {isAnziehen && <div className="position-section-label">Anziehposition</div>}
                     <button
                       type="button"
                       className={`position-row ${assignedMember ? 'filled' : 'empty'} ${swapSourceId === position.id ? 'selected' : ''} ${isTeamMember ? 'team-member-row' : ''}`}

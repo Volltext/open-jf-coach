@@ -10,15 +10,12 @@ export const A_PART_POSITIONS = [
   { id: 'a-schlauchtruppmann', label: 'Schlauchtruppmann (STM)', shortLabel: 'STM', section: 'A-Teil' }
 ];
 
-export const B_PART_POSITIONS = [
-  ...Array.from({ length: 9 }, (_, index) => ({
-    id: `b-laeufer-${index + 1}`,
-    label: `Läufer ${index + 1}`,
-    shortLabel: `L${index + 1}`,
-    section: 'B-Teil'
-  })),
-  { id: 'b-anziehen', label: 'Anziehen', shortLabel: 'Az', section: 'B-Teil' }
-];
+export const B_PART_POSITIONS = Array.from({ length: 9 }, (_, index) => ({
+  id: `b-laeufer-${index + 1}`,
+  label: `Läufer ${index + 1}`,
+  shortLabel: `L${index + 1}`,
+  section: 'B-Teil'
+}));
 
 export const ALL_POSITIONS = [...A_PART_POSITIONS, ...B_PART_POSITIONS];
 
@@ -38,7 +35,7 @@ export const DEMO_MEMBERS = [
 ];
 
 export const A_MODE_MARKERS = ['zu Wasser', 'Knoten Start'];
-export const B_MODE_MARKERS = ['Läufer 3 fertig', 'L7/L8 Team', 'Anziehen'];
+export const B_MODE_MARKERS = ['Schlauchrollen', 'L7/L8 Team', 'Anziehen'];
 
 export const POCKET_ARTICLES = [
   {
