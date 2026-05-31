@@ -260,6 +260,31 @@ function App() {
   }, [appState.stopwatchDraft.isRunning]);
 
   useEffect(() => {
+    if (!appState.stopwatchDraft.isRunning || !navigator.wakeLock) {
+      return undefined;
+    }
+
+    let wakeLock = null;
+    navigator.wakeLock.request('screen').then((lock) => {
+      wakeLock = lock;
+    });
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && navigator.wakeLock) {
+        navigator.wakeLock.request('screen').then((lock) => {
+          wakeLock = lock;
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      wakeLock?.release();
+    };
+  }, [appState.stopwatchDraft.isRunning]);
+
+  useEffect(() => {
     const target = appState.stopwatchDraft.targetSeconds;
     setTargetInput((current) => {
       if (parseTargetToSeconds(current) === target) {
