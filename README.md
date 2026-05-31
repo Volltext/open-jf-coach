@@ -38,6 +38,10 @@ npm run dev
 
 ## Eigene Instanz deployen
 
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/amgiparker/open-jf-coach)
+
+> Nach dem Klick auf "Deploy": Firebase-Credentials als Umgebungsvariablen in Netlify eintragen. Vollständige Anleitung in [docs/deployment.md](docs/deployment.md).
+
 ### 1. Firebase einrichten
 Folge der Anleitung in [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
 
