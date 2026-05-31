@@ -1100,18 +1100,6 @@ function App() {
             )}
 
             <article className="surface-card stacked-card">
-              <h3>Notizen zum Lauf</h3>
-              <textarea
-                className="run-notes-input"
-                placeholder="Beobachtungen, Besonderheiten, Verbesserungen…"
-                rows={3}
-                value={stopwatchDraft.notes}
-                disabled={isTimerControlledByOther}
-                onChange={(e) => updateStopwatchDraft((d) => ({ ...d, notes: e.target.value }))}
-              />
-            </article>
-
-            <article className="surface-card stacked-card">
               <h3>{stopwatchDraft.mode === 'a' ? 'Zwischenzeiten' : 'Sonderaufgaben B-Teil'}</h3>
 
               <div className={`split-button-grid ${stopwatchDraft.mode === 'b' ? 'b-part' : ''}`}>
@@ -1191,6 +1179,18 @@ function App() {
                   </>
                 )}
               </div>
+            </article>
+
+            <article className="surface-card stacked-card">
+              <h3>Notizen zum Lauf</h3>
+              <textarea
+                className="run-notes-input"
+                placeholder="Beobachtungen, Besonderheiten, Verbesserungen…"
+                rows={3}
+                value={stopwatchDraft.notes}
+                disabled={isTimerControlledByOther}
+                onChange={(e) => updateStopwatchDraft((d) => ({ ...d, notes: e.target.value }))}
+              />
             </article>
 
             <article className="surface-card stacked-card scoring-card">
