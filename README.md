@@ -11,22 +11,65 @@ Mobile-first PWA für Aufstellung, Stoppuhr, Analyse und Wissensdatenbank im Jug
 - **Offline-fähig** — funktioniert auch ohne Internetverbindung (PWA)
 - **Echtzeit-Sync** — Änderungen werden live zwischen Geräten synchronisiert
 
-## Screenshots
+## Tech-Stack
 
-*Coming soon*
+- [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+- [Firebase](https://firebase.google.com/) (Firestore + Auth)
+- [Workbox](https://developer.chrome.com/docs/workbox/) (PWA / Offline-Support)
+- [lucide-react](https://lucide.dev/) (Icons)
 
-## Technologie
+## Lokale Entwicklung
 
-- React (Frontend)
-- Firebase Firestore (Echtzeit-Datenbank & Sync)
-- Workbox (Service Worker / Offline-Support)
-- Vite (Build-Tool)
+```bash
+# 1. Repository klonen
+git clone https://github.com/amgiparker/open-jf-coach.git
+cd open-jf-coach
 
-## Eigene Instanz betreiben
+# 2. Abhängigkeiten installieren
+npm install
 
-> **Hinweis:** Da aktuell kein Source-Code verfügbar ist, kann noch keine eigene Instanz aufgesetzt werden. Dies ist für eine zukünftige Version geplant.
+# 3. Umgebungsvariablen konfigurieren
+cp .env.example .env
+# .env mit eigenen Firebase-Credentials befüllen (siehe FIREBASE_SETUP.md)
 
-## Datenschutz
+# 4. Dev-Server starten
+npm run dev
+```
+
+## Eigene Instanz deployen
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/amgiparker/open-jf-coach)
+
+> Nach dem Klick auf "Deploy": Firebase-Credentials als Umgebungsvariablen in Netlify eintragen. Vollständige Anleitung in [docs/deployment.md](docs/deployment.md).
+
+### 1. Firebase einrichten
+Folge der Anleitung in [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
+
+### 2. Umgebungsvariablen setzen
+Kopiere `.env.example` nach `.env` und trage deine Firebase-Credentials ein:
+
+```env
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_FIREBASE_TEAM_ID=meine-jf-musterstadt
+```
+
+### 3. Build erstellen
+
+```bash
+npm run build
+```
+
+Das `dist/`-Verzeichnis kann anschließend auf Netlify, Vercel oder einem beliebigen Static-Hoster deployed werden.
+
+### Netlify
+Bei Netlify die Umgebungsvariablen unter **Site Settings → Environment Variables** eintragen — dann werden sie beim Build automatisch verwendet.
+
+## Datenschutz (DSGVO)
 
 Jede Jugendfeuerwehr, die diese App betreibt, ist selbst verantwortlich für die Verarbeitung personenbezogener Daten ihrer Mitglieder gemäß DSGVO. Wir empfehlen, Firebase in einer EU-Region (z.B. `europe-west3` / Frankfurt) zu betreiben.
 
@@ -36,8 +79,8 @@ Beiträge sind willkommen! Bitte lies zuerst [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Sicherheitslücken melden
 
-Bitte lies [SECURITY.md](SECURITY.md) für Informationen zum verantwortungsvollen Umgang mit Sicherheitslücken.
+Bitte lies [SECURITY.md](SECURITY.md).
 
 ## Lizenz
 
-AGPL-3.0 — siehe [LICENSE](LICENSE)
+[AGPL-3.0](LICENSE) — Änderungen müssen ebenfalls open-source veröffentlicht werden.
