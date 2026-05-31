@@ -1258,3 +1258,30 @@ button:active {
     border-radius: 1.25rem 1.25rem 0 0;
   }
 }
+
+/* Utility buttons */
+.secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(30, 41, 59, 0.9);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.secondary-btn:hover {
+  background: rgba(42, 55, 79, 0.95);
+  color: var(--fg);
+}
+
+.full-width-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.5rem;
+}

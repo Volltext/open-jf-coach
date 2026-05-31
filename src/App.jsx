@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleDashed,
+  Download,
   Link as LinkIcon,
   Minus,
   Plus,
@@ -27,6 +28,7 @@ import {
   A_PART_POSITIONS,
   B_MODE_MARKERS,
   B_PART_POSITIONS,
+  DEMO_MEMBERS,
   buildEmptyAssignments,
   createEmptyStopwatchDraft
 } from './domain';
@@ -753,6 +755,46 @@ function App() {
     setExpandedRunId(null);
   }
 
+  function loadDemoMembers() {
+    updateState((currentState) => {
+      const existingNames = new Set(currentState.members.map((m) => m.name));
+      const toAdd = DEMO_MEMBERS.filter((name) => !existingNames.has(name)).map((name) => ({ id: crypto.randomUUID(), name }));
+      return { ...currentState, members: [...currentState.members, ...toAdd] };
+    });
+  }
+
+  function exportTrainingLogCSV() {
+    const rows = [['Datum', 'Modus', 'Zeit (s)', 'Wertung', 'Vorgabe', 'Fehlerpunkte', 'Notizen', 'Aufstellung']];
+
+    for (const run of appState.trainingLog) {
+      const date = new Date(run.createdAt).toLocaleString('de-DE');
+      const mode = run.mode === 'a' ? 'A-Teil' : 'B-Teil';
+      const totalSec = (run.totalMs / 1000).toFixed(2);
+      const scoring = run.scoring?.total ?? '';
+      const vorgabe = run.scoring?.vorgabe ?? '';
+      const fehler = run.scoring?.fehlerpunkte ?? '';
+      const notes = (run.notes ?? '').replace(/"/g, '""');
+      const lineup = Object.entries(run.lineupSnapshot?.assignments ?? {})
+        .filter(([, id]) => Boolean(id))
+        .map(([posId, memberId]) => {
+          const pos = ALL_POSITIONS.find((p) => p.id === posId);
+          const name = getDisplayName(memberId, memberMap, run);
+          return `${pos?.shortLabel ?? posId}:${name}`;
+        })
+        .join(' ');
+      rows.push([date, mode, totalSec, scoring, vorgabe, fehler, `"${notes}"`, `"${lineup}"`]);
+    }
+
+    const csv = rows.map((r) => r.join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jf-coach-protokoll-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="mockup-app-shell">
       <main className="app-main">
@@ -800,6 +842,11 @@ function App() {
                     </div>
                   ))}
                 </div>
+                {appState.members.length === 0 && (
+                  <button type="button" className="secondary-btn full-width-btn" onClick={loadDemoMembers}>
+                    Demo-Mitglieder laden
+                  </button>
+                )}
               </article>
             )}
 
@@ -1191,6 +1238,11 @@ function App() {
 
             {analysisView === 'history' ? (
               <div className="history-stack">
+                {runs.length > 0 && (
+                  <button type="button" className="secondary-btn" onClick={exportTrainingLogCSV}>
+                    <Download size={15} /> Protokoll als CSV exportieren
+                  </button>
+                )}
                 {runs.length === 0 && <p className="empty-copy large">Noch keine Trainingslaeufe gespeichert.</p>}
                 {runs.map((run) => {
                   const isExpanded = expandedRunId === run.id;
