@@ -35,7 +35,7 @@ export const DEMO_MEMBERS = [
 ];
 
 export const A_MODE_MARKERS = ['zu Wasser', 'Knoten Start'];
-export const B_MODE_MARKERS = ['Läufer 3 fertig', 'L7/L8 Team', 'Anziehen'];
+export const B_MODE_MARKERS = ['Schlauchrollen', 'L7/L8 Team', 'Anziehen'];
 
 export const POCKET_ARTICLES = [
   {
