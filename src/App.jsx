@@ -118,6 +118,7 @@ function App() {
   const [now, setNow] = useState(Date.now());
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState(null);
+  const [editingRunNotes, setEditingRunNotes] = useState(null);
   const [syncStatus, setSyncStatus] = useState('offline');
   const [fehlerSearch, setFehlerSearch] = useState('');
   const [expandedFehlerGroup, setExpandedFehlerGroup] = useState(null);
@@ -139,6 +140,9 @@ function App() {
       }
 
       setAppState(loadedState);
+      if (loadedState.preferences?.startScreen === 'aufstellung') {
+        setActiveTab('lineup');
+      }
       setIsLoaded(true);
     }
 
@@ -755,6 +759,43 @@ function App() {
     setExpandedRunId(null);
   }
 
+  function updateRunNotes(runId, notes) {
+    updateState((currentState) => ({
+      ...currentState,
+      trainingLog: currentState.trainingLog.map((run) => run.id === runId ? { ...run, notes } : run)
+    }));
+  }
+
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jf-coach-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importBackup(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.members)) {
+          updateState(() => parsed);
+        } else {
+          alert('Ungültige Backup-Datei.');
+        }
+      } catch {
+        alert('Fehler beim Lesen der Backup-Datei.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
   function loadDemoMembers() {
     updateState((currentState) => {
       const existingNames = new Set(currentState.members.map((m) => m.name));
@@ -938,6 +979,34 @@ function App() {
                 ))}
               </div>
             </article>
+
+            <article className="surface-card stacked-card">
+              <h3>Einstellungen &amp; Daten</h3>
+              <div className="settings-row">
+                <span>Startseite</span>
+                <div className="segmented-compact">
+                  <button
+                    type="button"
+                    className={appState.preferences?.startScreen !== 'aufstellung' ? 'active' : ''}
+                    onClick={() => updateState((s) => ({ ...s, preferences: { ...s.preferences, startScreen: 'stoppuhr' } }))}
+                  >Stoppuhr</button>
+                  <button
+                    type="button"
+                    className={appState.preferences?.startScreen === 'aufstellung' ? 'active' : ''}
+                    onClick={() => updateState((s) => ({ ...s, preferences: { ...s.preferences, startScreen: 'aufstellung' } }))}
+                  >Aufstellung</button>
+                </div>
+              </div>
+              <div className="settings-action-row">
+                <button type="button" className="secondary-btn" onClick={exportBackup}>
+                  <Download size={15} /> Backup exportieren
+                </button>
+                <label className="secondary-btn backup-import-label">
+                  <Download size={15} style={{ transform: 'rotate(180deg)' }} /> Backup importieren
+                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={importBackup} />
+                </label>
+              </div>
+            </article>
           </section>
         )}
 
@@ -994,6 +1063,18 @@ function App() {
             {isTimerControlledByOther && (
               <div className="info-banner warning">Timer wird auf einem anderen Gerät gesteuert.</div>
             )}
+
+            <article className="surface-card stacked-card">
+              <h3>Notizen zum Lauf</h3>
+              <textarea
+                className="run-notes-input"
+                placeholder="Beobachtungen, Besonderheiten, Verbesserungen…"
+                rows={3}
+                value={stopwatchDraft.notes}
+                disabled={isTimerControlledByOther}
+                onChange={(e) => updateStopwatchDraft((d) => ({ ...d, notes: e.target.value }))}
+              />
+            </article>
 
             <article className="surface-card stacked-card">
               <h3>{stopwatchDraft.mode === 'a' ? 'Zwischenzeiten' : 'Sonderaufgaben B-Teil'}</h3>
@@ -1238,11 +1319,32 @@ function App() {
 
             {analysisView === 'history' ? (
               <div className="history-stack">
-                {runs.length > 0 && (
-                  <button type="button" className="secondary-btn" onClick={exportTrainingLogCSV}>
-                    <Download size={15} /> Protokoll als CSV exportieren
-                  </button>
-                )}
+                {runs.length > 0 && (() => {
+                  const aRuns = runs.filter((r) => r.mode === 'a');
+                  const bRuns = runs.filter((r) => r.mode === 'b');
+                  const avg = (arr) => arr.length === 0 ? null : Math.round(arr.reduce((s, r) => s + r.totalMs, 0) / arr.length);
+                  const best = (arr) => arr.length === 0 ? null : Math.min(...arr.map((r) => r.totalMs));
+                  return (
+                    <article className="surface-card stacked-card stats-summary-card">
+                      <h3>Übersicht</h3>
+                      <div className="stats-grid">
+                        {aRuns.length > 0 && <>
+                          <div className="stats-cell"><span>A-Teil Läufe</span><strong>{aRuns.length}</strong></div>
+                          <div className="stats-cell"><span>Ø A-Teil</span><strong>{formatDuration(avg(aRuns))}</strong></div>
+                          <div className="stats-cell"><span>Beste A-Zeit</span><strong>{formatDuration(best(aRuns))}</strong></div>
+                        </>}
+                        {bRuns.length > 0 && <>
+                          <div className="stats-cell"><span>B-Teil Läufe</span><strong>{bRuns.length}</strong></div>
+                          <div className="stats-cell"><span>Ø B-Teil</span><strong>{formatDuration(avg(bRuns))}</strong></div>
+                          <div className="stats-cell"><span>Beste B-Zeit</span><strong>{formatDuration(best(bRuns))}</strong></div>
+                        </>}
+                      </div>
+                      <button type="button" className="secondary-btn" onClick={exportTrainingLogCSV}>
+                        <Download size={15} /> Protokoll als CSV exportieren
+                      </button>
+                    </article>
+                  );
+                })()}
                 {runs.length === 0 && <p className="empty-copy large">Noch keine Trainingslaeufe gespeichert.</p>}
                 {runs.map((run) => {
                   const isExpanded = expandedRunId === run.id;
@@ -1329,6 +1431,26 @@ function App() {
                                   </span>
                                 );
                               })}
+                          </div>
+                          <div className="history-notes-edit">
+                            {editingRunNotes === run.id ? (
+                              <>
+                                <textarea
+                                  className="run-notes-input"
+                                  rows={3}
+                                  autoFocus
+                                  defaultValue={run.notes ?? ''}
+                                  onChange={(e) => updateRunNotes(run.id, e.target.value)}
+                                />
+                                <button type="button" className="secondary-btn" onClick={(e) => { e.stopPropagation(); setEditingRunNotes(null); }}>
+                                  Fertig
+                                </button>
+                              </>
+                            ) : (
+                              <button type="button" className="secondary-btn" onClick={(e) => { e.stopPropagation(); setEditingRunNotes(run.id); }}>
+                                {run.notes ? `Notiz: ${run.notes.slice(0, 40)}${run.notes.length > 40 ? '…' : ''}` : 'Notiz hinzufügen'}
+                              </button>
+                            )}
                           </div>
                           <button
                             type="button"
