@@ -7,6 +7,9 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Toast-Rückmeldung beim Speichern und Löschen von Trainingsläufen
+- Sicherheitsabfrage vor dem Löschen eines Trainingslaufs
+- Einzelne A-Teil-Zwischenzeiten und B-Teil-Aufgaben-Timer korrigierbar (zurücksetzen ohne kompletten Reset)
 - Open-Source-Veröffentlichung mit AGPL-3.0-Lizenz
 - `.env.example` für einfache Konfiguration
 - `netlify.toml` für One-Click-Deployment auf Netlify
@@ -16,6 +19,13 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 - `FIREBASE_SETUP.md` mit Schritt-für-Schritt-Anleitung
 - Issue-Templates für Bug Reports und Feature Requests
 - `CONTRIBUTING.md` und `SECURITY.md`
+
+### Changed
+- Sync-Banner blendet sich bei stabiler Verbindung automatisch aus
+- Barrierefreiheit verbessert (aria-Labels für Navigation, Timer, Wertung und Statusmeldungen)
+
+### Fixed
+- Tippfehler „Trainingslaeufe" → „Trainingsläufe"
 
 ## [0.1.0] - 2026-05-23
 

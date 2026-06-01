@@ -133,8 +133,12 @@ function App() {
   const [fehlerSearch, setFehlerSearch] = useState('');
   const [expandedFehlerGroup, setExpandedFehlerGroup] = useState(null);
   const [targetInput, setTargetInput] = useState('');
+  const [toast, setToast] = useState(null);
+  const [pendingDeleteRunId, setPendingDeleteRunId] = useState(null);
+  const [syncBannerCollapsed, setSyncBannerCollapsed] = useState(false);
 
   const cloudRef = useRef(null);
+  const toastTimeoutRef = useRef(null);
   const cloudReadyRef = useRef(false);
   const suppressNextCloudPushRef = useRef(false);
   const lastCloudPushAtRef = useRef(0);
@@ -293,6 +297,31 @@ function App() {
       return target === null ? '' : formatSecondsToInput(target);
     });
   }, [appState.stopwatchDraft.targetSeconds]);
+
+  // Sync-Banner bei stabiler Verbindung nach kurzer Zeit einklappen, damit es im
+  // Normalbetrieb keinen Platz belegt. Fehler/Offline/Verbinden bleiben sichtbar.
+  useEffect(() => {
+    if (syncStatus !== 'connected') {
+      setSyncBannerCollapsed(false);
+      return undefined;
+    }
+    const timerId = window.setTimeout(() => setSyncBannerCollapsed(true), 2500);
+    return () => window.clearTimeout(timerId);
+  }, [syncStatus]);
+
+  useEffect(() => () => {
+    if (toastTimeoutRef.current) {
+      window.clearTimeout(toastTimeoutRef.current);
+    }
+  }, []);
+
+  function showToast(message) {
+    setToast(message);
+    if (toastTimeoutRef.current) {
+      window.clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = window.setTimeout(() => setToast(null), 2600);
+  }
 
   const memberMap = useMemo(
     () => Object.fromEntries(appState.members.map((member) => [member.id, member])),
@@ -680,6 +709,48 @@ function App() {
     }));
   }
 
+  // Einzelne A-Teil-Zwischenzeit entfernen (z. B. nach Fehltipp). Wird der
+  // "Knoten Start"-Marker entfernt, muss auch die laufende Knotenmessung zurück.
+  function removeMarker(markerId) {
+    if (isTimerControlledByOther) {
+      return;
+    }
+    updateStopwatchDraft((currentDraft) => {
+      const target = currentDraft.markers.find((marker) => marker.id === markerId);
+      if (!target) {
+        return currentDraft;
+      }
+      const isKnotStart = target.label === 'Knoten Start';
+      return {
+        ...currentDraft,
+        stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
+        markers: currentDraft.markers.filter((marker) => marker.id !== markerId),
+        knotStartElapsedMs: isKnotStart ? null : currentDraft.knotStartElapsedMs,
+        knotDurationMs: isKnotStart ? null : currentDraft.knotDurationMs
+      };
+    });
+  }
+
+  // B-Teil-Aufgabentimer zurücksetzen, damit eine versehentlich gestoppte
+  // Aufgabe erneut gemessen werden kann.
+  function resetTaskTimer(label) {
+    if (isTimerControlledByOther) {
+      return;
+    }
+    updateStopwatchDraft((currentDraft) => {
+      if (!currentDraft.taskTimers?.[label]) {
+        return currentDraft;
+      }
+      const nextTimers = { ...currentDraft.taskTimers };
+      delete nextTimers[label];
+      return {
+        ...currentDraft,
+        stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
+        taskTimers: nextTimers
+      };
+    });
+  }
+
   function toggleScoring() {
     if (isTimerControlledByOther) {
       return;
@@ -780,6 +851,8 @@ function App() {
         stopwatchVersion: (currentState.stopwatchDraft.stopwatchVersion ?? 0) + 1
       }
     }));
+
+    showToast('Lauf gespeichert ✓');
   }
 
   function toggleGuide(guideId) {
@@ -792,6 +865,8 @@ function App() {
       trainingLog: currentState.trainingLog.filter((run) => run.id !== runId)
     }));
     setExpandedRunId(null);
+    setPendingDeleteRunId(null);
+    showToast('Eintrag gelöscht');
   }
 
   function updateRunNotes(runId, notes) {
@@ -876,7 +951,7 @@ function App() {
   return (
     <div className="mockup-app-shell">
       <main className="app-main">
-        <div className={`sync-banner ${syncStatus}`}>
+        <div className={`sync-banner ${syncStatus} ${syncBannerCollapsed ? 'collapsed' : ''}`} role="status" aria-live="polite">
           <strong>Sync:</strong>{' '}
           {syncStatus === 'connected' && 'Verbunden'}
           {syncStatus === 'syncing' && 'Synchronisiert...'}
@@ -1061,7 +1136,7 @@ function App() {
 
             <article className="surface-card timer-display-card">
               <p className="timer-title">{stopwatchDraft.mode === 'a' ? 'A-Teil Lauf' : 'B-Teil Lauf'}</p>
-              <div className="timer-value">{formatDuration(elapsedMs)}</div>
+              <div className="timer-value" role="timer" aria-label={`Laufzeit ${formatDuration(elapsedMs)}`}>{formatDuration(elapsedMs)}</div>
               {stopwatchDraft.mode === 'a' && (
                 <div className="knot-status-band">
                   <span>Knotenzeit</span>
@@ -1158,7 +1233,18 @@ function App() {
                         .map(([label, t]) => (
                           <div key={label} className="split-row">
                             <span>{label}</span>
-                            <strong>{formatDuration(t.endElapsedMs - t.startElapsedMs)}</strong>
+                            <div className="split-row-right">
+                              <strong>{formatDuration(t.endElapsedMs - t.startElapsedMs)}</strong>
+                              <button
+                                type="button"
+                                className="split-row-remove"
+                                onClick={() => resetTaskTimer(label)}
+                                disabled={isTimerControlledByOther}
+                                aria-label={`Aufgabe ${label} zurücksetzen`}
+                              >
+                                <RotateCcw size={15} />
+                              </button>
+                            </div>
                           </div>
                         ))
                 ) : (
@@ -1167,7 +1253,18 @@ function App() {
                     {stopwatchDraft.markers.map((split) => (
                       <div key={split.id} className="split-row">
                         <span>{split.label}</span>
-                        <strong>{formatDuration(split.elapsedMs)}</strong>
+                        <div className="split-row-right">
+                          <strong>{formatDuration(split.elapsedMs)}</strong>
+                          <button
+                            type="button"
+                            className="split-row-remove"
+                            onClick={() => removeMarker(split.id)}
+                            disabled={isTimerControlledByOther}
+                            aria-label={`Zwischenzeit ${split.label} entfernen`}
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                     {stopwatchDraft.knotDurationMs !== null && (
@@ -1209,7 +1306,7 @@ function App() {
 
               {stopwatchDraft.scoringEnabled && (
                 <>
-                  <div className="score-summary">
+                  <div className="score-summary" aria-live="polite">
                     <div className="score-total">
                       <strong>{score.total}</strong>
                       <span>von {score.vorgabe} Punkten</span>
@@ -1380,7 +1477,7 @@ function App() {
                     </article>
                   );
                 })()}
-                {runs.length === 0 && <p className="empty-copy large">Noch keine Trainingslaeufe gespeichert.</p>}
+                {runs.length === 0 && <p className="empty-copy large">Noch keine Trainingsläufe gespeichert.</p>}
                 {runs.map((run) => {
                   const isExpanded = expandedRunId === run.id;
                   return (
@@ -1490,7 +1587,7 @@ function App() {
                           <button
                             type="button"
                             className="history-delete-btn"
-                            onClick={(e) => { e.stopPropagation(); deleteRun(run.id); }}
+                            onClick={(e) => { e.stopPropagation(); setPendingDeleteRunId(run.id); }}
                           >
                             <Trash2 size={14} /> Eintrag löschen
                           </button>
@@ -1660,20 +1757,20 @@ function App() {
         )}
       </main>
 
-      <nav className="bottom-navigation">
-        <button type="button" className={activeTab === 'lineup' ? 'active' : ''} onClick={() => setActiveTab('lineup')}>
+      <nav className="bottom-navigation" aria-label="Hauptnavigation">
+        <button type="button" className={activeTab === 'lineup' ? 'active' : ''} aria-current={activeTab === 'lineup' ? 'page' : undefined} onClick={() => setActiveTab('lineup')}>
           <Users size={22} />
           <span>Aufstellung</span>
         </button>
-        <button type="button" className={activeTab === 'stopwatch' ? 'active' : ''} onClick={() => setActiveTab('stopwatch')}>
+        <button type="button" className={activeTab === 'stopwatch' ? 'active' : ''} aria-current={activeTab === 'stopwatch' ? 'page' : undefined} onClick={() => setActiveTab('stopwatch')}>
           <Timer size={22} />
           <span>Stoppuhr</span>
         </button>
-        <button type="button" className={activeTab === 'analysis' ? 'active' : ''} onClick={() => setActiveTab('analysis')}>
+        <button type="button" className={activeTab === 'analysis' ? 'active' : ''} aria-current={activeTab === 'analysis' ? 'page' : undefined} onClick={() => setActiveTab('analysis')}>
           <BarChart2 size={22} />
           <span>Analyse</span>
         </button>
-        <button type="button" className={activeTab === 'knowledge' ? 'active' : ''} onClick={() => setActiveTab('knowledge')}>
+        <button type="button" className={activeTab === 'knowledge' ? 'active' : ''} aria-current={activeTab === 'knowledge' ? 'page' : undefined} onClick={() => setActiveTab('knowledge')}>
           <BookOpen size={22} />
           <span>Wissen</span>
         </button>
@@ -1728,6 +1825,29 @@ function App() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {pendingDeleteRunId && (
+        <div className="sheet-backdrop centered" onClick={() => setPendingDeleteRunId(null)}>
+          <div className="confirm-panel" onClick={(event) => event.stopPropagation()}>
+            <h3>Eintrag wirklich löschen?</h3>
+            <p>Dieser Trainingslauf wird dauerhaft entfernt. Das kann nicht rückgängig gemacht werden.</p>
+            <div className="confirm-actions">
+              <button type="button" className="secondary-action" onClick={() => setPendingDeleteRunId(null)}>
+                Abbrechen
+              </button>
+              <button type="button" className="secondary-action danger-action" onClick={() => deleteRun(pendingDeleteRunId)}>
+                Löschen bestätigen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="toast" role="status" aria-live="polite">
+          {toast}
         </div>
       )}
     </div>
