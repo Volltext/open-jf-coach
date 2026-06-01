@@ -147,6 +147,21 @@ textarea:focus {
   color: #fecaca;
 }
 
+.sync-banner {
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+  max-height: 4rem;
+}
+
+.sync-banner.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  opacity: 0;
+  margin-bottom: -1rem;
+}
+
 .tab-screen {
   display: grid;
   gap: 1rem;
@@ -415,6 +430,58 @@ textarea:focus {
   display: grid;
   place-items: center;
   color: #fda4af;
+}
+
+.split-row-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.split-row-remove {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.6rem;
+  background: rgba(148, 163, 184, 0.12);
+  color: #fda4af;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.split-row-remove:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100% - 2rem);
+  padding: 0.75rem 1.1rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid var(--border);
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  animation: toast-in 0.2s ease;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .soft-count,
