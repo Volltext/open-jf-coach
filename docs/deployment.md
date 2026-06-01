@@ -3,22 +3,11 @@
 ## Voraussetzungen
 
 - [Node.js](https://nodejs.org/) v20 oder neuer
-- Ein [Firebase-Konto](https://firebase.google.com/) (kostenlos)
-- Ein Hosting-Anbieter (Netlify, Vercel oder eigener Server)
+- Firebase-Projekt eingerichtet → [FIREBASE_SETUP.md](../FIREBASE_SETUP.md)
 
 ---
 
-## Schritt 1: Firebase einrichten
-
-Folge der Anleitung in [FIREBASE_SETUP.md](../FIREBASE_SETUP.md), um ein eigenes Firebase-Projekt anzulegen.
-
-Am Ende hast du folgende Werte:
-- `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`
-- Eine selbst gewählte Team-ID (z.B. `jf-musterstadt`)
-
----
-
-## Schritt 2: Repository klonen
+## Schritt 1: Repository klonen und Abhängigkeiten installieren
 
 ```bash
 git clone https://github.com/amgiparker/open-jf-coach.git
@@ -28,7 +17,7 @@ npm install
 
 ---
 
-## Schritt 3: Umgebungsvariablen konfigurieren
+## Schritt 2: Umgebungsvariablen setzen
 
 ```bash
 cp .env.example .env
@@ -46,76 +35,65 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 VITE_FIREBASE_TEAM_ID=jf-musterstadt
 ```
 
-> **Hinweis zur Team-ID:** Diese ID wird als Pfad in der Firestore-Datenbank verwendet (`teams/<team-id>/state/shared`). Wähle eine eindeutige, beschreibende ID für deine Wehr. Kleinbuchstaben und Bindestriche empfohlen.
-
 ---
 
-## Schritt 4: Lokal testen
+## Schritt 3: Lokal testen
 
 ```bash
 npm run dev
 ```
 
-Die App ist dann unter `http://localhost:5173` erreichbar.
+App unter `http://localhost:5173` prüfen — Sync und Offline-Verhalten testen.
 
 ---
 
-## Schritt 5: Build erstellen
+## Schritt 4: Build erstellen
 
 ```bash
 npm run build
 ```
 
-Das `dist/`-Verzeichnis enthält die fertige App.
+Das fertige `dist/`-Verzeichnis kann jetzt auf einen Hoster hochgeladen werden.
 
 ---
 
-## Deployment auf Netlify (empfohlen)
+## Hosting
 
-### Option A: Per GitHub-Verknüpfung (automatisch)
+### Netlify (empfohlen)
 
-1. Forke dieses Repository auf GitHub
-2. Gehe zu [netlify.com](https://netlify.com) → "Add new site" → "Import an existing project"
-3. Verbinde dein GitHub-Repository
-4. Build-Einstellungen werden automatisch aus `netlify.toml` gelesen
-5. Trage unter **Site Settings → Environment Variables** alle `VITE_*`-Variablen ein
-6. Klicke "Deploy site"
+**Option A — Automatisch via GitHub:**
 
-Bei jedem Push auf `main` wird automatisch ein neuer Build gestartet.
+1. Repository auf GitHub forken
+2. [netlify.com](https://netlify.com) → "Add new site" → "Import an existing project"
+3. GitHub-Repository verbinden
+4. Build-Einstellungen werden automatisch aus `netlify.toml` übernommen
+5. Unter **Site Settings → Environment Variables** alle `VITE_*`-Variablen eintragen
+6. "Deploy site" klicken
 
-### Option B: Manuelles Upload
+Bei jedem Push auf `main` wird automatisch ein neuer Build ausgelöst.
+
+**Option B — Manuell:**
 
 ```bash
 npm run build
-# dist/ Ordner auf Netlify hochladen (Drag & Drop im Dashboard)
+# dist/-Ordner per Drag & Drop im Netlify-Dashboard hochladen
 ```
 
 ---
 
-## Deployment auf Vercel
+### Vercel
 
-1. Forke dieses Repository
-2. Importiere es auf [vercel.com](https://vercel.com)
-3. Framework: **Vite** (wird automatisch erkannt)
-4. Trage alle `VITE_*`-Variablen unter Environment Variables ein
-5. Deploy
-
----
-
-## Firestore Sicherheitsregeln
-
-Damit nur Nutzer deiner App auf die Daten zugreifen können, kopiere den Inhalt von [`firestore.rules`](../firestore.rules) in die Firebase Console unter **Firestore → Regeln**.
+1. Repository forken
+2. Auf [vercel.com](https://vercel.com) importieren (Framework **Vite** wird automatisch erkannt)
+3. Alle `VITE_*`-Variablen unter **Environment Variables** eintragen
+4. Deploy
 
 ---
 
-## Häufige Probleme
+## Fehlerbehebung
 
-### App zeigt "Konfiguration fehlt"
-Eine oder mehrere Umgebungsvariablen sind nicht gesetzt. Prüfe deine `.env`-Datei (lokal) bzw. die Environment Variables in Netlify/Vercel.
-
-### Firebase-Fehler "permission-denied"
-Die Firestore-Sicherheitsregeln sind noch auf "Testmodus" (alle dürfen alles). Kopiere die Regeln aus `firestore.rules` in die Firebase Console.
-
-### App lädt, aber Sync funktioniert nicht
-- Prüfe ob Anonymous Authentication in Firebase aktiviert ist (Authentication → Sign-in method → Anonym)
-- Prüfe die Browser-Konsole auf Firebase-Fehlermeldungen
+| Problem | Lösung |
+|---|---|
+| „Konfiguration fehlt" | Eine oder mehrere `VITE_*`-Variablen fehlen. `.env`-Datei bzw. Hosting-Einstellungen prüfen. |
+| Firebase-Fehler „permission-denied" | Sicherheitsregeln aus `firestore.rules` in die Firebase Console kopieren. |
+| App lädt, Sync funktioniert nicht | In Firebase prüfen: **Authentication → Anmeldemethoden → Anonym** aktiviert? Außerdem Browser-Konsole auf Firebase-Fehlermeldungen prüfen. |

@@ -1,28 +1,53 @@
-# Firebase Setup fuer JF-Coach
+# Firebase einrichten
 
-Diese Anleitung bereitet alles vor, damit ich anschliessend Cloud-Sync (Realtime fuer alle Betreuer) in die App implementieren kann.
+Diese Anleitung führt dich durch die Einrichtung eines eigenen Firebase-Projekts für JF-Coach.
 
-## 1. Firebase Projekt anlegen
-1. In der Firebase Console ein neues Projekt erstellen, z. B. `jf-coach`.
-2. Google Analytics kann fuer den Start deaktiviert bleiben.
+> **Voraussetzung:** Ein kostenloses [Firebase-Konto](https://firebase.google.com/).
+
+---
+
+## 1. Projekt anlegen
+
+1. Öffne die [Firebase Console](https://console.firebase.google.com/) und klicke auf **"Projekt hinzufügen"**.
+2. Gib dem Projekt einen Namen, z.B. `jf-coach`.
+3. Google Analytics kann deaktiviert bleiben.
+
+---
 
 ## 2. Web-App registrieren
-1. Im Projekt auf "Web-App hinzufuegen" gehen.
-2. App-Name z. B. `jf-coach-web`.
-3. Die Firebase Config-Werte kopieren (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
 
-## 3. Firestore Datenbank aktivieren
-1. In Firebase "Firestore Database" erstellen.
-2. Modus fuer den Start: "Produktionsmodus" (empfohlen).
-3. Standort auswaehlen (z. B. `europe-west3`).
+1. Im Projekt auf **"Web-App hinzufügen"** klicken (Symbol `</>`).
+2. App-Name vergeben, z.B. `jf-coach-web`.
+3. Die angezeigten **Firebase-Config-Werte** notieren — du brauchst sie gleich:
 
-## 4. Authentication aktivieren (anonym)
-1. Unter "Authentication" die Methode "Anonym" einschalten.
-2. Es ist kein manuelles Anlegen von Benutzerkonten notwendig.
-3. Jeder Betreuer erhaelt beim ersten Start automatisch eine anonyme UID.
+```
+apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId
+```
 
-## 5. Sicherheitsregeln setzen (MVP)
-Firestore Rules Beispiel fuer teambasierten Zugriff:
+---
+
+## 3. Firestore-Datenbank aktivieren
+
+1. Im linken Menü auf **"Firestore Database"** → **"Datenbank erstellen"**.
+2. Modus: **Produktionsmodus** (empfohlen).
+3. Standort: **`europe-west3`** (Frankfurt) für DSGVO-Konformität.
+
+---
+
+## 4. Anonyme Authentifizierung aktivieren
+
+1. Im linken Menü auf **"Authentication"** → **"Anmeldemethoden"**.
+2. **"Anonym"** aktivieren.
+
+Jeder Betreuer erhält beim ersten App-Start automatisch eine anonyme UID — es müssen keine Konten manuell angelegt werden.
+
+---
+
+## 5. Sicherheitsregeln setzen
+
+Kopiere den Inhalt der Datei [`firestore.rules`](firestore.rules) in die Firebase Console unter **Firestore → Regeln**.
+
+Zur Orientierung — das ist der Inhalt der Datei:
 
 ```rules
 rules_version = '2';
@@ -31,7 +56,6 @@ service cloud.firestore {
     match /teams/{teamId} {
       allow read, write: if request.auth != null;
     }
-
     match /teams/{teamId}/{document=**} {
       allow read, write: if request.auth != null;
     }
@@ -39,42 +63,42 @@ service cloud.firestore {
 }
 ```
 
-Hinweis: Das ist ein Startpunkt. Fuer Produktion sollten wir Rollen/Team-Mitgliedschaft strenger pruefen.
+> **Hinweis:** Diese Regeln erlauben allen authentifizierten Nutzern den Zugriff auf alle Teams. Für eine produktive Umgebung mit mehreren Wehren sollten die Regeln um eine Team-Mitgliedschaftsprüfung erweitert werden.
 
-## 6. Environment Variablen im Projekt anlegen
-Im Projekt `JF-Trainings-Tracker` eine Datei `.env.local` erstellen:
+---
+
+## 6. Umgebungsvariablen konfigurieren
+
+Lege im Projektordner eine Datei `.env` an (Vorlage: `.env.example`) und trage deine Firebase-Werte ein:
 
 ```env
-VITE_FIREBASE_API_KEY=Aiza...
-VITE_FIREBASE_AUTH_DOMAIN=jf-coach-199bd.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=jf-coach-199bd
-VITE_FIREBASE_STORAGE_BUCKET=jf-coach-199bd.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=52539021821
-VITE_FIREBASE_APP_ID=1:52539021821:web:80abbc7d3015484ba56194
-VITE_FIREBASE_TEAM_ID=jf-coach-main
+VITE_FIREBASE_API_KEY=AIzaSy...
+VITE_FIREBASE_AUTH_DOMAIN=mein-projekt.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=mein-projekt
+VITE_FIREBASE_STORAGE_BUCKET=mein-projekt.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+VITE_FIREBASE_TEAM_ID=jf-musterstadt
 ```
 
-Wichtig: `.env.local` nicht committen.
+**Zur Team-ID:** Diese ID dient als Pfad in der Firestore-Datenbank (`teams/<team-id>/...`). Wähle eine eindeutige ID für deine Wehr — Kleinbuchstaben und Bindestriche empfohlen, z.B. `jf-hamburg-nord`.
 
-## 7. Teamstruktur in Firestore vorbereiten
-Empfohlene Struktur:
+> `.env` nicht in Git committen — sie ist bereits in `.gitignore` eingetragen.
 
-- `teams/{teamId}`: Stammdaten Team
-- `teams/{teamId}/members/{memberId}`: Jugendliche
-- `teams/{teamId}/lineups/{lineupId}`: Vorlagen + letzte Aufstellung
-- `teams/{teamId}/runs/{runId}`: Trainingslaeufe
-- `teams/{teamId}/knowledge/{docId}`: optionale teaminterne Wissenseintraege
+---
 
-## 8. Was du mir danach geben musst
-Damit ich es direkt implementieren kann, brauche ich von dir:
-1. `teamId`, die wir verwenden sollen (z. B. `jf-hamburg-nord`).
-2. Info, welche `teamId` die Betreuer gemeinsam nutzen sollen.
-3. Bestaetigung, dass `.env.local` mit den Werten gesetzt ist.
+## Datenbankstruktur
 
-## 9. Was ich dann implementiere
-Sobald die Punkte oben stehen, baue ich:
-1. Firebase Initialisierung und Auth-Flow.
-2. Synchronisierung fuer Mitglieder, Aufstellungsvorlagen und Trainingslaeufe.
-3. Offline-First mit lokalem Cache + automatischem Sync bei Verbindung.
-4. Konfliktstrategie (Last write wins + Zeitstempel).
-5. Sichtbarer Sync-Status in der App.
+JF-Coach verwendet folgende Firestore-Struktur:
+
+```
+teams/{teamId}/                    # Team-Stammdaten
+teams/{teamId}/members/{id}        # Mitglieder
+teams/{teamId}/lineups/{id}        # Aufstellungsvorlagen
+teams/{teamId}/runs/{id}           # Trainingsläufe
+teams/{teamId}/knowledge/{id}      # Teaminterne Wissenseinträge (optional)
+```
+
+---
+
+Weiter mit der **[Deployment-Anleitung](docs/deployment.md)**.

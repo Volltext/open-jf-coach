@@ -4,12 +4,14 @@ Mobile-first PWA für Aufstellung, Stoppuhr, Analyse und Wissensdatenbank im Jug
 
 ## Features
 
-- **Aufstellung** — Mitglieder verwalten und A-Teil/B-Teil Aufstellungen planen
-- **Stoppuhr** — Timer für Übungsabläufe und Knotentraining
-- **Trainingsprotokoll** — Aufzeichnung von Trainingseinheiten mit Zeitstempeln
-- **Wissensdatenbank** — Knoten, Regeln und Guides als Nachschlagewerk
-- **Offline-fähig** — funktioniert auch ohne Internetverbindung (PWA)
-- **Echtzeit-Sync** — Änderungen werden live zwischen Geräten synchronisiert
+| Feature | Beschreibung |
+|---|---|
+| **Aufstellung** | Mitglieder verwalten und A-Teil/B-Teil Aufstellungen planen |
+| **Stoppuhr** | Timer für Übungsabläufe und Knotentraining |
+| **Trainingsprotokoll** | Aufzeichnung von Trainingseinheiten mit Zeitstempeln |
+| **Wissensdatenbank** | Knoten, Regeln und Guides als Nachschlagewerk |
+| **Offline-fähig** | Funktioniert auch ohne Internetverbindung (PWA) |
+| **Echtzeit-Sync** | Änderungen werden live zwischen Geräten synchronisiert |
 
 ## Tech-Stack
 
@@ -18,56 +20,36 @@ Mobile-first PWA für Aufstellung, Stoppuhr, Analyse und Wissensdatenbank im Jug
 - [Workbox](https://developer.chrome.com/docs/workbox/) (PWA / Offline-Support)
 - [lucide-react](https://lucide.dev/) (Icons)
 
-## Lokale Entwicklung
+---
 
-```bash
-# 1. Repository klonen
-git clone https://github.com/amgiparker/open-jf-coach.git
-cd open-jf-coach
+## Eigene Instanz aufsetzen
 
-# 2. Abhängigkeiten installieren
-npm install
-
-# 3. Umgebungsvariablen konfigurieren
-cp .env.example .env
-# .env mit eigenen Firebase-Credentials befüllen (siehe FIREBASE_SETUP.md)
-
-# 4. Dev-Server starten
-npm run dev
-```
-
-## Eigene Instanz deployen
+### Schnellstart via Netlify
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/amgiparker/open-jf-coach)
 
-> Nach dem Klick auf "Deploy": Firebase-Credentials als Umgebungsvariablen in Netlify eintragen. Vollständige Anleitung in [docs/deployment.md](docs/deployment.md).
+Nach dem Klick auf "Deploy" musst du deine Firebase-Credentials als Umgebungsvariablen in Netlify eintragen. Die vollständige Anleitung findest du unter [docs/deployment.md](docs/deployment.md).
 
-### 1. Firebase einrichten
-Folge der Anleitung in [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
+### Schritt-für-Schritt
 
-### 2. Umgebungsvariablen setzen
-Kopiere `.env.example` nach `.env` und trage deine Firebase-Credentials ein:
+1. **Firebase einrichten** → [FIREBASE_SETUP.md](FIREBASE_SETUP.md)
+2. **App deployen** → [docs/deployment.md](docs/deployment.md)
 
-```env
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
-VITE_FIREBASE_MESSAGING_SENDER_ID=...
-VITE_FIREBASE_APP_ID=...
-VITE_FIREBASE_TEAM_ID=meine-jf-musterstadt
-```
+---
 
-### 3. Build erstellen
+## Lokale Entwicklung
 
 ```bash
-npm run build
+git clone https://github.com/amgiparker/open-jf-coach.git
+cd open-jf-coach
+npm install
+cp .env.example .env   # Firebase-Credentials eintragen (siehe FIREBASE_SETUP.md)
+npm run dev
 ```
 
-Das `dist/`-Verzeichnis kann anschließend auf Netlify, Vercel oder einem beliebigen Static-Hoster deployed werden.
+Die App ist dann unter `http://localhost:5173` erreichbar.
 
-### Netlify
-Bei Netlify die Umgebungsvariablen unter **Site Settings → Environment Variables** eintragen — dann werden sie beim Build automatisch verwendet.
+---
 
 ## Datenschutz (DSGVO)
 
