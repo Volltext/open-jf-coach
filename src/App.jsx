@@ -1390,7 +1390,7 @@ function App() {
                         className={`history-summary-row ${isExpanded ? 'expanded' : ''}`}
                         onClick={() => setExpandedRunId((current) => (current === run.id ? null : run.id))}
                       >
-                        <div>
+                        <div className="history-summary-left">
                           <span className={`mode-pill ${run.mode === 'a' ? 'a' : 'b'}`}>{run.mode === 'a' ? 'A-Teil' : 'B-Teil'}</span>
                           <p>{DATE_FORMATTER.format(new Date(run.createdAt))}</p>
                         </div>
