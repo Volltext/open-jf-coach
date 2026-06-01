@@ -102,6 +102,17 @@ function formatSecondsToInput(seconds) {
   return `${minutes}:${String(rest).padStart(2, '0')}`;
 }
 
+// Numerische Tastaturen bieten keinen Doppelpunkt. Wir maskieren die reine
+// Zifferneingabe zu mm:ss, sodass die letzten zwei Ziffern immer die Sekunden
+// sind (Uhrzeit-Logik): "230" -> "2:30", "50" -> "50", "1230" -> "12:30".
+function maskTimeInput(raw) {
+  const digits = String(raw ?? '').replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) {
+    return digits;
+  }
+  return `${digits.slice(0, -2)}:${digits.slice(-2)}`;
+}
+
 function getDisplayName(memberId, memberMap, record) {
   if (!memberId) {
     return 'Nicht besetzt';
@@ -763,11 +774,12 @@ function App() {
   }
 
   function handleTargetInput(raw) {
-    setTargetInput(raw);
+    const masked = maskTimeInput(raw);
+    setTargetInput(masked);
     if (isTimerControlledByOther) {
       return;
     }
-    const seconds = parseTargetToSeconds(raw);
+    const seconds = parseTargetToSeconds(masked);
     updateStopwatchDraft((currentDraft) => ({
       ...currentDraft,
       stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
@@ -1327,10 +1339,11 @@ function App() {
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="z. B. 2:30"
+                      placeholder="z. B. 230 → 2:30"
                       value={targetInput}
                       onChange={(event) => handleTargetInput(event.target.value)}
                       disabled={isTimerControlledByOther}
+                      aria-label={`${stopwatchDraft.mode === 'a' ? 'Vorgabezeit' : 'Soll-Zeit'} in Minuten und Sekunden, nur Ziffern eingeben`}
                     />
                   </label>
 
