@@ -77,32 +77,82 @@ export function resolveBackendConfig() {
 
 // --- Beitritts-Link (Weg 2) ---
 //
-// Kodiert die Verbindungsdaten kompakt und URL-sicher, damit ein einmal
+// Kodiert die Verbindungsdaten möglichst kompakt und URL-sicher, damit ein einmal
 // eingerichtetes Team per Link/QR-Code geteilt werden kann. Kameraden müssen so
 // das Supabase-Setup nicht selbst durchlaufen.
+//
+// Aufbau (neues, kurzes Format):  <url|ref>~<apiKey>~<teamId>
+//   - Der apiKey ist bereits ein URL-sicheres base64url-JWT. Er wird bewusst
+//     NICHT erneut base64-kodiert — das hatte den Link zuvor um ~33 % aufgebläht.
+//   - Die kurzen Felder (URL/Projekt-Ref und Team-ID) werden base64url-kodiert,
+//     damit Sonderzeichen den Trenner „~" nicht zerstören. „~" ist URL-sicher
+//     (unreserviert) und kommt weder im base64url-Alphabet noch im JWT vor.
+//   - Cloud-URLs (https://<ref>.supabase.co) werden auf die reine Projekt-Ref
+//     verkürzt und beim Beitritt wieder expandiert.
 
 function padBase64(value) {
   return value + '='.repeat((4 - (value.length % 4)) % 4);
 }
 
+function toBase64Url(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64Url(value) {
+  const base64 = padBase64(String(value).replace(/-/g, '+').replace(/_/g, '/'));
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+// Cloud-URL auf die Projekt-Ref kürzen; alles andere (self-hosted) unverändert lassen.
+function shortenSupabaseUrl(url) {
+  const trimmed = String(url).replace(/\/+$/, '');
+  const match = /^https:\/\/([a-z0-9]+)\.supabase\.co$/i.exec(trimmed);
+  return match ? match[1] : trimmed;
+}
+
+function expandSupabaseUrl(value) {
+  return value.includes('://') ? value : `https://${value}.supabase.co`;
+}
+
 export function encodeJoinPayload(config) {
-  const json = JSON.stringify({
-    provider: config.provider,
-    supabase: config.supabase,
-    teamId: config.teamId
-  });
-  // encodeURIComponent stellt reines ASCII sicher, danach Base64-URL-Variante.
-  return btoa(encodeURIComponent(json))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return [
+    toBase64Url(shortenSupabaseUrl(config.supabase.url)),
+    config.supabase.apiKey,
+    toBase64Url(config.teamId)
+  ].join('~');
 }
 
 export function decodeJoinPayload(encoded) {
   try {
-    const base64 = padBase64(String(encoded).replace(/-/g, '+').replace(/_/g, '/'));
-    const json = decodeURIComponent(atob(base64));
-    const parsed = JSON.parse(json);
+    const value = String(encoded);
+
+    // Neues, kompaktes Format: <url|ref>~<apiKey>~<teamId>
+    if (value.includes('~')) {
+      const [urlPart, apiKey, teamPart] = value.split('~');
+      if (!urlPart || !apiKey || !teamPart) {
+        return null;
+      }
+      const url = expandSupabaseUrl(fromBase64Url(urlPart));
+      const teamId = fromBase64Url(teamPart);
+      if (url && apiKey && teamId) {
+        return { provider: 'supabase', supabase: { url, apiKey }, teamId };
+      }
+      return null;
+    }
+
+    // Altes Format (Rückwärtskompatibilität): btoa(encodeURIComponent(json)).
+    const base64 = padBase64(value.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed = JSON.parse(decodeURIComponent(atob(base64)));
     if (
       parsed?.provider === 'supabase'
       && parsed.supabase?.url
