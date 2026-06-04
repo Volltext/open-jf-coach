@@ -1,18 +1,69 @@
 :root {
   color-scheme: dark;
-  font-family: 'Trebuchet MS', 'Avenir Next', 'Segoe UI', sans-serif;
+  font-family: system-ui, 'Segoe UI', 'Avenir Next', 'Trebuchet MS', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Roboto Mono', 'Courier New', monospace;
+
+  /* Radius-Skala */
+  --r-xs: 0.5rem;
+  --r-sm: 0.75rem;
+  --r-md: 1rem;
+  --r-lg: 1.25rem;
+  --r-xl: 1.5rem;
+  --r-pill: 999px;
+
+  /* Marken-Akzent (Orange) – in beiden Themes identisch */
+  --accent-rgb: 249, 115, 22;
+  --accent: rgb(var(--accent-rgb));
+  --accent-strong: #ea580c;
+  --on-accent: #1a0f04;
+  --accent-text: var(--accent);
+
+  /* Semantik */
+  --danger: #dc2626;
+  --success: #10b981;
+  --blue: #2563eb;
+
+  /* Dunkles Theme (Standard) */
   --bg: #0f172a;
   --bg-strong: #020617;
   --surface: #1e293b;
   --surface-muted: #334155;
+  --inset: rgba(15, 23, 42, 0.55);
   --border: rgba(148, 163, 184, 0.2);
   --text: #f8fafc;
   --muted: #94a3b8;
-  --accent: #facc15;
-  --danger: #dc2626;
-  --success: #10b981;
-  --blue: #2563eb;
   --shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
+  --app-bg: linear-gradient(180deg, #020617 0%, #0f172a 30%, #111827 100%);
+  --nav-bg: rgba(2, 6, 23, 0.96);
+
+  /* Status-Textfarben (auf zarten Tints) */
+  --text-danger: #fca5a5;
+  --text-success: #6ee7b7;
+  --text-info: #93c5fd;
+  --text-warning: #fde68a;
+  --text-accent: #fed7aa;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #eef2f7;
+  --bg-strong: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #e8edf4;
+  --inset: rgba(15, 23, 42, 0.045);
+  --border: rgba(15, 23, 42, 0.14);
+  --text: #0f172a;
+  --muted: #51607a;
+  --shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  --app-bg: linear-gradient(180deg, #f8fafc 0%, #eef2f7 40%, #e6ecf4 100%);
+  --nav-bg: rgba(255, 255, 255, 0.96);
+
+  --text-danger: #b91c1c;
+  --text-success: #047857;
+  --text-info: #1d4ed8;
+  --text-warning: #b45309;
+  --text-accent: #9a3412;
+  --accent-text: #c2410c;
 }
 
 * {
@@ -27,7 +78,8 @@ body,
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #020617 0%, #0f172a 30%, #111827 100%);
+  background: var(--app-bg);
+  background-attachment: fixed;
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
 }
@@ -47,7 +99,7 @@ input,
 textarea {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: var(--r-md);
   background: var(--bg-strong);
   color: var(--text);
   padding: 0.85rem 1rem;
@@ -56,7 +108,7 @@ textarea {
 
 input:focus,
 textarea:focus {
-  border-color: rgba(250, 204, 21, 0.8);
+  border-color: var(--accent);
 }
 
 .mockup-app-shell {
@@ -66,53 +118,13 @@ textarea:focus {
   margin: 0 auto;
 }
 
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.25rem 0 1rem;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.82), transparent);
-  backdrop-filter: blur(14px);
-}
-
-.brand-block {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.brand-icon {
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 0.7rem;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #dc2626, #f97316);
-  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.28);
-}
-
-.brand-block h1 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.brand-block p {
-  margin: 0.1rem 0 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
 .mode-pill,
 .mini-pill,
 .chip-action,
 .soft-count,
 .guide-short-pill,
 .category-label {
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 0.4rem 0.75rem;
   font-size: 0.72rem;
   display: inline-block;
@@ -126,25 +138,25 @@ textarea:focus {
 }
 
 .sync-banner {
-  border-radius: 0.85rem;
+  border-radius: var(--r-sm);
   padding: 0.65rem 0.8rem;
-  background: rgba(30, 41, 59, 0.86);
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.84rem;
 }
 
 .sync-banner.connected {
-  color: #bbf7d0;
+  color: var(--text-success);
 }
 
 .sync-banner.syncing,
 .sync-banner.connecting {
-  color: #fde68a;
+  color: var(--text-warning);
 }
 
 .sync-banner.error {
-  color: #fecaca;
+  color: var(--text-danger);
 }
 
 .sync-banner {
@@ -160,111 +172,6 @@ textarea:focus {
   border-width: 0;
   opacity: 0;
   margin-bottom: -1rem;
-}
-
-.app-statusbar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.app-statusbar .sync-banner {
-  flex: 1;
-  min-width: 0;
-}
-
-.app-statusbar .sync-banner.collapsed {
-  /* In der Flex-Zeile reicht das Ausblenden des Banners; das Zahnrad bleibt. */
-  margin-bottom: 0;
-}
-
-.settings-gear {
-  flex-shrink: 0;
-  color: var(--muted);
-}
-
-.install-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-radius: 0.85rem;
-  padding: 0.7rem 0.85rem;
-  background: rgba(250, 204, 21, 0.12);
-  border: 1px solid rgba(250, 204, 21, 0.5);
-  color: var(--text);
-  font-size: 0.84rem;
-}
-
-.install-banner-text {
-  flex: 1;
-  line-height: 1.35;
-  color: var(--muted);
-}
-
-.install-banner-text strong {
-  display: block;
-  margin-bottom: 0.15rem;
-  color: var(--text);
-}
-
-.install-banner .install-action {
-  background: var(--accent);
-  color: #1f2937;
-  border-radius: 0.7rem;
-  padding: 0.5rem 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.install-banner .install-dismiss {
-  background: transparent;
-  color: var(--muted);
-  padding: 0.25rem;
-  display: inline-flex;
-}
-
-.settings-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  text-align: left;
-  margin: 0.75rem 0 1rem;
-}
-
-.settings-label {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.settings-value {
-  font-weight: 600;
-}
-
-.settings-hint {
-  color: var(--muted);
-  font-size: 0.82rem;
-  margin: 0 0 0.5rem;
-}
-
-.ios-install-steps {
-  margin: 0.75rem 0 0;
-  padding-left: 1.1rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.share-link-input {
-  width: 100%;
-  font-size: 0.8rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 0.75rem;
-}
-
-.share-actions {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
 }
 
 .tab-screen {
@@ -295,9 +202,9 @@ textarea:focus {
 }
 
 .surface-card {
-  background: rgba(30, 41, 59, 0.94);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 1.25rem;
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow);
 }
 
@@ -327,10 +234,10 @@ textarea:focus {
 .icon-button {
   width: 2.4rem;
   height: 2.4rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   display: grid;
   place-items: center;
-  background: rgba(30, 41, 59, 0.9);
+  background: var(--surface);
   color: var(--muted);
 }
 
@@ -343,9 +250,9 @@ textarea:focus {
 
 .accent-square {
   width: 3rem;
-  border-radius: 1rem;
+  border-radius: var(--r-md);
   background: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -365,21 +272,21 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: #334155;
+  background: var(--surface-muted);
   color: var(--text);
 }
 
 .member-pill {
   padding: 0.45rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 
 .member-pill button {
   width: 1.4rem;
   height: 1.4rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: transparent;
-  color: #fca5a5;
+  color: var(--text-danger);
   display: grid;
   place-items: center;
 }
@@ -388,9 +295,9 @@ textarea:focus {
 .segmented-compact {
   display: grid;
   gap: 0.35rem;
-  background: #1e293b;
+  background: var(--surface);
   padding: 0.3rem;
-  border-radius: 1rem;
+  border-radius: var(--r-md);
 }
 
 .segmented-bar {
@@ -407,7 +314,7 @@ textarea:focus {
 
 .segmented-bar button,
 .segmented-compact button {
-  border-radius: 0.8rem;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--muted);
   padding: 0.75rem 0.9rem;
@@ -415,6 +322,10 @@ textarea:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
 }
 
 .knowledge-tabs button {
@@ -423,23 +334,42 @@ textarea:focus {
 }
 
 .segmented-bar .active,
-.segmented-compact .active,
-.bottom-navigation .active {
+.segmented-compact .active {
   background: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
+}
+
+.bottom-navigation button {
+  position: relative;
+}
+
+.bottom-navigation .active {
+  color: var(--accent-text);
+}
+
+.bottom-navigation .active::before {
+  content: "";
+  position: absolute;
+  top: 0.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.6rem;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
 }
 
 .info-banner {
   padding: 0.85rem 1rem;
-  background: rgba(30, 41, 59, 0.82);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: var(--r-md);
   color: var(--muted);
   line-height: 1.45;
 }
 
 .info-banner.warning {
-  color: #fde68a;
+  color: var(--text-warning);
 }
 
 .position-list,
@@ -453,9 +383,9 @@ textarea:focus {
 
 .position-row {
   width: 100%;
-  background: #0f172a;
+  background: var(--bg);
   color: var(--text);
-  border-radius: 1rem;
+  border-radius: var(--r-md);
   padding: 1rem;
   display: flex;
   justify-content: space-between;
@@ -465,7 +395,7 @@ textarea:focus {
 }
 
 .position-row.filled {
-  background: #1e293b;
+  background: var(--surface);
   border-color: rgba(148, 163, 184, 0.24);
 }
 
@@ -509,10 +439,10 @@ textarea:focus {
 .role-badge {
   width: 2.6rem;
   height: 2.6rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   display: grid;
   place-items: center;
-  background: #1e293b;
+  background: var(--surface);
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
@@ -521,7 +451,7 @@ textarea:focus {
 
 .role-badge.active {
   background: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
 }
 
 .role-title {
@@ -548,7 +478,7 @@ textarea:focus {
   place-items: center;
   width: 1.9rem;
   height: 1.9rem;
-  border-radius: 0.6rem;
+  border-radius: var(--r-sm);
   background: rgba(148, 163, 184, 0.12);
   color: #fda4af;
   cursor: pointer;
@@ -568,7 +498,7 @@ textarea:focus {
   z-index: 60;
   max-width: calc(100% - 2rem);
   padding: 0.75rem 1.1rem;
-  border-radius: 0.9rem;
+  border-radius: var(--r-md);
   background: rgba(15, 23, 42, 0.96);
   border: 1px solid var(--border);
   color: #f8fafc;
@@ -592,16 +522,16 @@ textarea:focus {
 .soft-count,
 .category-label,
 .guide-short-pill {
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--inset);
   color: var(--muted);
 }
 
 .chip-action {
-  background: rgba(250, 204, 21, 0.15);
-  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent-text);
   font-weight: 700;
   cursor: pointer;
-  border: 1px solid rgba(250, 204, 21, 0.25);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
 }
 
 .template-row,
@@ -611,8 +541,8 @@ textarea:focus {
   align-items: center;
   gap: 0.75rem;
   padding: 0.85rem 0.9rem;
-  border-radius: 0.95rem;
-  background: #0f172a;
+  border-radius: var(--r-md);
+  background: var(--bg);
 }
 
 .template-row > div:first-child {
@@ -658,7 +588,8 @@ textarea:focus {
 }
 
 .timer-value {
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: clamp(3rem, 14vw, 4.4rem);
   font-weight: 700;
   margin-top: 0.6rem;
@@ -669,8 +600,8 @@ textarea:focus {
   display: inline-grid;
   gap: 0.15rem;
   padding: 0.7rem 1rem;
-  border-radius: 1rem;
-  background: rgba(15, 23, 42, 0.72);
+  border-radius: var(--r-md);
+  background: var(--inset);
 }
 
 .knot-status-band span,
@@ -692,7 +623,7 @@ textarea:focus {
 
 .huge-action {
   min-height: 6rem;
-  border-radius: 1.1rem;
+  border-radius: var(--r-md);
   font-size: 1.8rem;
   font-weight: 800;
 }
@@ -714,8 +645,8 @@ textarea:focus {
 
 .secondary-action {
   min-height: 2.85rem;
-  border-radius: 1rem;
-  background: #334155;
+  border-radius: var(--r-md);
+  background: var(--surface-muted);
   color: var(--text);
   display: flex;
   align-items: center;
@@ -725,6 +656,7 @@ textarea:focus {
 
 .secondary-action.save {
   background: var(--blue);
+  color: #fff;
 }
 
 .secondary-action:disabled {
@@ -753,8 +685,8 @@ textarea:focus {
 
 .split-button {
   min-height: 5rem;
-  border-radius: 1rem;
-  background: #334155;
+  border-radius: var(--r-md);
+  background: var(--surface-muted);
   color: var(--text);
   display: grid;
   justify-items: center;
@@ -778,24 +710,25 @@ textarea:focus {
 }
 
 .split-button.active-knot {
-  background: rgba(250, 204, 21, 0.22);
-  color: #fde68a;
+  background: rgba(var(--accent-rgb), 0.22);
+  color: var(--text-warning);
 }
 
 .split-button.task-running {
   background: rgba(16, 185, 129, 0.18);
   border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #6ee7b7;
+  color: var(--text-success);
 }
 
 .split-button.task-done {
   background: rgba(37, 99, 235, 0.18);
   border: 1px solid rgba(37, 99, 235, 0.4);
-  color: #93c5fd;
+  color: var(--text-info);
 }
 
 .task-timer-value {
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.82rem;
   font-weight: 700;
   font-style: normal;
@@ -812,17 +745,17 @@ textarea:focus {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--accent);
+  color: var(--accent-text);
   padding: 0.5rem 0.25rem 0.1rem;
 }
 
 .position-row.team-member-row {
-  border-left: 3px solid rgba(250, 204, 21, 0.4);
+  border-left: 3px solid rgba(var(--accent-rgb), 0.4);
 }
 
 .emphasis-row {
-  border: 1px solid rgba(250, 204, 21, 0.22);
-  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .compact-top {
@@ -854,7 +787,7 @@ textarea:focus {
 }
 
 .history-summary-row.expanded {
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--inset);
 }
 
 .history-summary-row p {
@@ -897,9 +830,9 @@ textarea:focus {
   margin-top: 0.35rem;
   background: transparent;
   border: 1px solid rgba(220, 38, 38, 0.35);
-  color: #fca5a5;
+  color: var(--text-danger);
   padding: 0.55rem 0.9rem;
-  border-radius: 0.85rem;
+  border-radius: var(--r-sm);
   font-size: 0.8rem;
   cursor: pointer;
   justify-self: start;
@@ -912,12 +845,12 @@ textarea:focus {
 
 .mode-pill.a {
   background: rgba(37, 99, 235, 0.2);
-  color: #bfdbfe;
+  color: var(--text-info);
 }
 
 .mode-pill.b {
   background: rgba(249, 115, 22, 0.2);
-  color: #fed7aa;
+  color: var(--text-accent);
 }
 
 .matrix-wrap {
@@ -942,7 +875,7 @@ textarea:focus {
 .matrix-wrap td:first-child {
   position: sticky;
   left: 0;
-  background: #1e293b;
+  background: var(--surface);
   text-align: left;
   z-index: 1;
 }
@@ -950,8 +883,8 @@ textarea:focus {
 .heat-cell {
   position: absolute;
   inset: 0.25rem;
-  border-radius: 0.6rem;
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.95), rgba(37, 99, 235, 0.88));
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.95), rgba(37, 99, 235, 0.88));
   z-index: 0;
 }
 
@@ -967,9 +900,9 @@ textarea:focus {
   align-items: center;
   gap: 0.65rem;
   padding: 0 0.95rem;
-  background: #1e293b;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: var(--r-md);
 }
 
 .search-shell input {
@@ -1001,7 +934,7 @@ textarea:focus {
 }
 
 .guide-accordion-trigger.expanded {
-  background: rgba(15, 23, 42, 0.35);
+  background: var(--inset);
 }
 
 .guide-trigger-meta {
@@ -1040,7 +973,7 @@ textarea:focus {
 
 .mini-pill.warning {
   background: rgba(220, 38, 38, 0.2);
-  color: #fecaca;
+  color: var(--text-danger);
 }
 
 .bottom-navigation {
@@ -1049,8 +982,8 @@ textarea:focus {
   right: 0;
   bottom: 0;
   z-index: 30;
-  background: rgba(2, 6, 23, 0.96);
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  background: var(--nav-bg);
+  border-top: 1px solid var(--border);
   padding: 0.45rem 0.55rem calc(0.45rem + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1058,7 +991,7 @@ textarea:focus {
 }
 
 .bottom-navigation button {
-  border-radius: 1rem;
+  border-radius: var(--r-md);
   min-height: 4rem;
   background: transparent;
   color: var(--muted);
@@ -1089,8 +1022,8 @@ textarea:focus {
 }
 
 .sheet-panel {
-  background: #1e293b;
-  border-radius: 1.5rem 1.5rem 0 0;
+  background: var(--surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
   padding: 1rem;
   max-height: 72vh;
   overflow: auto;
@@ -1109,8 +1042,8 @@ textarea:focus {
 
 .sheet-member-button {
   min-height: 4rem;
-  border-radius: 1rem;
-  background: #334155;
+  border-radius: var(--r-md);
+  background: var(--surface-muted);
   color: var(--text);
   padding: 0.75rem;
   display: flex;
@@ -1125,9 +1058,9 @@ textarea:focus {
 
 .confirm-panel {
   width: min(100%, 25rem);
-  background: #1e293b;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 1.25rem;
+  border-radius: var(--r-lg);
   padding: 1.2rem;
   box-shadow: var(--shadow);
 }
@@ -1161,7 +1094,7 @@ button:active {
 .scoring-switch {
   width: 3.2rem;
   height: 1.8rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-muted);
   position: relative;
   flex: 0 0 auto;
@@ -1180,6 +1113,7 @@ button:active {
   height: 1.4rem;
   border-radius: 50%;
   background: #f8fafc;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
   transition: transform 0.15s ease;
 }
 
@@ -1194,7 +1128,7 @@ button:active {
 .score-summary {
   margin-top: 1rem;
   padding: 1rem;
-  border-radius: 1rem;
+  border-radius: var(--r-md);
   background: rgba(37, 99, 235, 0.12);
   border: 1px solid rgba(37, 99, 235, 0.35);
   display: grid;
@@ -1203,7 +1137,8 @@ button:active {
 }
 
 .score-total strong {
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: clamp(2.4rem, 11vw, 3.4rem);
   font-weight: 800;
   display: block;
@@ -1225,11 +1160,11 @@ button:active {
 }
 
 .score-breakdown .neg {
-  color: #fca5a5;
+  color: var(--text-danger);
 }
 
 .score-breakdown .pos {
-  color: #6ee7b7;
+  color: var(--text-success);
 }
 
 .target-time-row {
@@ -1250,7 +1185,7 @@ button:active {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .quick-fehler-grid {
@@ -1263,7 +1198,7 @@ button:active {
 .quick-fehler {
   position: relative;
   min-height: 3.6rem;
-  border-radius: 0.9rem;
+  border-radius: var(--r-md);
   background: var(--surface-muted);
   color: var(--text);
   display: grid;
@@ -1296,7 +1231,7 @@ button:active {
   min-width: 1.4rem;
   height: 1.4rem;
   padding: 0 0.3rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--danger);
   color: #fff;
   font-size: 0.78rem;
@@ -1312,7 +1247,7 @@ button:active {
   margin-top: 1.1rem;
   padding: 0 0.9rem;
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: var(--r-md);
   background: var(--bg-strong);
   color: var(--muted);
 }
@@ -1331,7 +1266,7 @@ button:active {
 
 .fehler-group {
   border: 1px solid var(--border);
-  border-radius: 0.9rem;
+  border-radius: var(--r-md);
   overflow: hidden;
 }
 
@@ -1397,7 +1332,7 @@ button:active {
 .fehler-stepper button {
   width: 1.9rem;
   height: 1.9rem;
-  border-radius: 0.6rem;
+  border-radius: var(--r-sm);
   background: var(--surface-muted);
   color: var(--text);
   display: grid;
@@ -1438,17 +1373,17 @@ button:active {
 .recorded-right button {
   width: 1.7rem;
   height: 1.7rem;
-  border-radius: 0.5rem;
+  border-radius: var(--r-xs);
   background: rgba(220, 38, 38, 0.2);
-  color: #fca5a5;
+  color: var(--text-danger);
   display: grid;
   place-items: center;
 }
 
 .score-pill {
   background: rgba(37, 99, 235, 0.25);
-  color: #93c5fd;
-  border-radius: 999px;
+  color: var(--text-info);
+  border-radius: var(--r-pill);
   padding: 0.15rem 0.6rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1457,7 +1392,7 @@ button:active {
 .history-scoring {
   margin-top: 0.75rem;
   padding: 0.7rem 0.85rem;
-  border-radius: 0.9rem;
+  border-radius: var(--r-md);
   background: rgba(37, 99, 235, 0.1);
   border: 1px solid rgba(37, 99, 235, 0.3);
 }
@@ -1496,7 +1431,7 @@ button:active {
     right: auto;
     transform: translateX(-50%);
     width: min(32rem, calc(100vw - 1rem));
-    border-radius: 1.25rem 1.25rem 0 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
   }
 }
 
@@ -1506,18 +1441,18 @@ button:active {
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 1rem;
-  border-radius: 0.75rem;
-  background: rgba(30, 41, 59, 0.9);
+  border-radius: var(--r-sm);
+  background: var(--surface);
   color: var(--muted);
   font-size: 0.85rem;
   font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
 }
 
 .secondary-btn:hover {
-  background: rgba(42, 55, 79, 0.95);
+  background: var(--surface-muted);
   color: var(--text);
 }
 
@@ -1530,9 +1465,9 @@ button:active {
 /* Notes textarea */
 .run-notes-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.6rem;
+  background: var(--bg-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
   color: var(--text);
   padding: 0.6rem 0.75rem;
   font-size: 0.9rem;
@@ -1564,8 +1499,8 @@ button:active {
 }
 
 .stats-cell {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 0.6rem;
+  background: var(--inset);
+  border-radius: var(--r-sm);
   padding: 0.5rem 0.6rem;
   display: flex;
   flex-direction: column;
@@ -1607,4 +1542,151 @@ button:active {
 
 .backup-import-label {
   cursor: pointer;
+}
+
+/* --- Barrierefreiheit: sichtbarer Tastatur-Fokus (#5) --- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+button:focus-visible,
+.position-row:focus-visible,
+.sheet-member-button:focus-visible,
+.history-summary-row:focus-visible,
+.guide-accordion-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* --- Reduzierte Bewegung respektieren (#6) --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  button:active {
+    transform: none;
+  }
+}
+
+/* Zeit-Anzeigen mit gleichbreiten Ziffern, damit nichts springt (#8) */
+.split-row strong,
+.knot-status-band strong,
+.history-summary-right strong,
+.score-pill {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Topbar (Einstellungen-Button) --- */
+.app-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-statusbar .sync-banner {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-statusbar .sync-banner.collapsed {
+  /* In der Flex-Zeile reicht das Ausblenden des Banners; das Zahnrad bleibt. */
+  margin-bottom: 0;
+}
+
+.settings-gear {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+/* --- PWA-Installationshinweis --- */
+.install-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--r-md);
+  padding: 0.7rem 0.85rem;
+  background: rgba(var(--accent-rgb), 0.12);
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.install-banner-text {
+  flex: 1;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.install-banner-text strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--text);
+}
+
+.install-banner .install-action {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--r-sm);
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.install-banner .install-dismiss {
+  background: transparent;
+  color: var(--muted);
+  padding: 0.25rem;
+  display: inline-flex;
+}
+
+.ios-install-steps {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* --- Einstellungen-Texte --- */
+.settings-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.settings-value {
+  font-weight: 600;
+}
+
+.settings-hint {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0 0 0.5rem;
+}
+
+/* --- Team teilen (Link/QR) --- */
+.share-link-input {
+  width: 100%;
+  font-size: 0.8rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--r-sm);
+}
+
+.share-actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }

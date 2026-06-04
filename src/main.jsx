@@ -7,6 +7,15 @@ import JoinPrompt from './JoinPrompt';
 import { decodeJoinPayload, getEnvBackendConfig, readRuntimeConfig } from './backendConfig';
 import './index.css';
 
+// Gespeichertes Theme (Hell/Dunkel) möglichst früh setzen, damit beim Start
+// nichts kurz im falschen Farbschema aufblitzt. Standard ist das dunkle Theme.
+try {
+  const savedTheme = localStorage.getItem('jf-coach-theme');
+  document.documentElement.setAttribute('data-theme', savedTheme === 'light' ? 'light' : 'dark');
+} catch {
+  document.documentElement.setAttribute('data-theme', 'dark');
+}
+
 // Mit "?setup" in der Adresse lässt sich der Einrichtungs-Assistent jederzeit
 // erneut öffnen, um z. B. das Team zu wechseln oder Werte zu korrigieren.
 const forceSetup = /[?&#]setup\b/.test(window.location.search + window.location.hash);
