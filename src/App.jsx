@@ -1005,17 +1005,6 @@ function App() {
   return (
     <div className="mockup-app-shell">
       <main className="app-main">
-        <div className="app-topbar">
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setShowSettings(true)}
-            aria-label="Einstellungen"
-          >
-            <Settings size={20} />
-          </button>
-        </div>
-
         {pwa.shouldShow && (
           <div className="install-banner" role="region" aria-label="App installieren">
             <Smartphone size={22} />
@@ -1041,13 +1030,23 @@ function App() {
           </div>
         )}
 
-        <div className={`sync-banner ${syncStatus} ${syncBannerCollapsed ? 'collapsed' : ''}`} role="status" aria-live="polite">
-          <strong>Sync:</strong>{' '}
-          {syncStatus === 'connected' && 'Verbunden'}
-          {syncStatus === 'syncing' && 'Synchronisiert...'}
-          {syncStatus === 'connecting' && 'Verbinde...'}
-          {syncStatus === 'error' && 'Fehler'}
-          {syncStatus === 'offline' && 'Offline'}
+        <div className="app-statusbar">
+          <div className={`sync-banner ${syncStatus} ${syncBannerCollapsed ? 'collapsed' : ''}`} role="status" aria-live="polite">
+            <strong>Sync:</strong>{' '}
+            {syncStatus === 'connected' && 'Verbunden'}
+            {syncStatus === 'syncing' && 'Synchronisiert...'}
+            {syncStatus === 'connecting' && 'Verbinde...'}
+            {syncStatus === 'error' && 'Fehler'}
+            {syncStatus === 'offline' && 'Offline'}
+          </div>
+          <button
+            type="button"
+            className="icon-button settings-gear"
+            onClick={() => setShowSettings(true)}
+            aria-label="Einstellungen"
+          >
+            <Settings size={20} />
+          </button>
         </div>
 
         {activeTab === 'lineup' && (

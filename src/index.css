@@ -1591,11 +1591,25 @@ textarea:focus-visible {
 }
 
 /* --- Topbar (Einstellungen-Button) --- */
-.app-topbar {
+.app-statusbar {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  margin-bottom: -0.35rem;
+  gap: 0.5rem;
+}
+
+.app-statusbar .sync-banner {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-statusbar .sync-banner.collapsed {
+  /* In der Flex-Zeile reicht das Ausblenden des Banners; das Zahnrad bleibt. */
+  margin-bottom: 0;
+}
+
+.settings-gear {
+  flex-shrink: 0;
+  color: var(--muted);
 }
 
 /* --- PWA-Installationshinweis --- */
