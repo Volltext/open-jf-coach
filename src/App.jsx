@@ -11,6 +11,7 @@ import {
   Download,
   Link as LinkIcon,
   Minus,
+  Moon,
   Plus,
   RotateCcw,
   Save,
@@ -18,6 +19,7 @@ import {
   Settings,
   Shield,
   Smartphone,
+  Sun,
   Timer,
   Trash2,
   Users,
@@ -50,6 +52,15 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
 });
 
 const DEVICE_ID_STORAGE_KEY = 'jf-coach-device-id';
+const THEME_STORAGE_KEY = 'jf-coach-theme';
+
+function getInitialTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
 
 function getOrCreateDeviceId() {
   try {
@@ -154,6 +165,17 @@ function App() {
   const [syncBannerCollapsed, setSyncBannerCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  // Theme auf das Wurzel-Element anwenden und Auswahl merken.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      /* localStorage nicht verfügbar – Auswahl gilt dann nur für diese Sitzung. */
+    }
+  }, [theme]);
 
   const pwa = usePwaInstall();
   const activeBackend = useMemo(() => {
@@ -1931,6 +1953,28 @@ function App() {
                   ? `${activeBackend.provider === 'supabase' ? 'Supabase' : 'Firebase'} · Team „${activeBackend.teamId}"`
                   : 'Nicht verbunden'}
               </span>
+            </div>
+
+            <div className="settings-row">
+              <span className="settings-label">Darstellung</span>
+              <div className="segmented-compact" role="group" aria-label="Darstellung wählen">
+                <button
+                  type="button"
+                  className={theme === 'light' ? 'active' : ''}
+                  aria-pressed={theme === 'light'}
+                  onClick={() => setTheme('light')}
+                >
+                  <Sun size={15} /> Hell
+                </button>
+                <button
+                  type="button"
+                  className={theme === 'dark' ? 'active' : ''}
+                  aria-pressed={theme === 'dark'}
+                  onClick={() => setTheme('dark')}
+                >
+                  <Moon size={15} /> Dunkel
+                </button>
+              </div>
             </div>
 
             {activeBackend?.editable ? (
