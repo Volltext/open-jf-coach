@@ -95,8 +95,12 @@ sind ab jetzt live synchron.
 
 ## Tipps
 
-- **App teilen:** Gib deinen Betreuer:innen einfach die Adresse weiter. Sie tragen
-  beim ersten Start dieselben drei Werte ein — danach läuft alles synchron.
+- **Kameraden einladen (ohne Setup):** Tippe in der App oben rechts auf das
+  **Zahnrad** → **„Kameraden einladen"**. Du erhältst einen **Beitritts-Link und
+  QR-Code**. Wer ihn öffnet bzw. scannt, ist sofort verbunden — die anderen müssen
+  das Supabase-Setup **nicht** selbst durchlaufen.
+  > ⚠️ Jeder mit diesem Link kann die Team-Daten sehen und bearbeiten. Teile ihn nur
+  > mit Personen, die Zugriff haben sollen.
 - **Einstellungen ändern:** Tippe in der App oben rechts auf das **Zahnrad** →
   **„Verbindung ändern"**, um Werte zu korrigieren oder das Team zu wechseln.
   (Alternativ `?setup` an die Adresse anhängen.)
