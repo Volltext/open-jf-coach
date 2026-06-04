@@ -31,12 +31,22 @@ Das war's. Die Einrichtung machst du **einmal pro Jugendfeuerwehr**.
 
 ## 2. Zugangsdaten kopieren
 
-1. Im Projekt links auf **Settings** (Zahnrad) → **API**.
-2. Dort findest du zwei Werte, die du gleich in JF-Coach einträgst:
-   - **Project URL** — sieht aus wie `https://xxxxx.supabase.co`
-   - **Project API Keys → `anon` `public`** — ein langer Schlüssel, der mit `eyJ...` beginnt
+Am einfachsten über den **Connect**-Button **oben im Dashboard** — dort stehen URL
+und Key direkt beieinander. Alternativ links über **Settings → API Keys**.
 
-> Der `anon`-Key ist dafür gedacht, öffentlich in der App zu stehen — das ist kein Geheimnis.
+Du brauchst genau zwei Werte:
+
+- **Project URL** — sieht aus wie `https://xxxxx.supabase.co`
+- **Publishable Key** — beginnt mit `sb_publishable_…`
+  (Findest du im Bereich **API Keys**. Falls noch keiner existiert: **„Create new API Keys"** klicken.)
+
+> Der Publishable Key ist dafür gedacht, öffentlich in der App zu stehen — das ist
+> kein Geheimnis. Den **Secret Key** (`sb_secret_…`) brauchst du **nicht** und darfst
+> ihn niemals in die App eintragen.
+>
+> **Älteres Projekt?** Ältere Supabase-Projekte zeigen statt des Publishable Keys
+> noch den **anon public**-Key (beginnt mit `eyJ…`) unter „Legacy API Keys". Der
+> funktioniert ebenfalls und kann genauso eingetragen werden.
 
 ---
 
@@ -75,7 +85,7 @@ eingerichtet. Das SQL kannst du bei Bedarf gefahrlos erneut ausführen.
 2. Eintragen:
    - **Team-Name** — eindeutig für deine Wehr, z. B. `jf-musterstadt`
    - **Supabase Project URL** (aus Schritt 2)
-   - **Supabase anon public Key** (aus Schritt 2)
+   - **Supabase Publishable Key** (aus Schritt 2)
 3. Auf **"Verbinden & loslegen"** klicken. Die App testet die Verbindung und startet.
 
 Fertig! Alle Geräte, die dieselbe Adresse mit demselben Team-Namen verwenden,
@@ -85,8 +95,12 @@ sind ab jetzt live synchron.
 
 ## Tipps
 
-- **App teilen:** Gib deinen Betreuer:innen einfach die Adresse weiter. Sie tragen
-  beim ersten Start dieselben drei Werte ein — danach läuft alles synchron.
+- **Kameraden einladen (ohne Setup):** Tippe in der App oben rechts auf das
+  **Zahnrad** → **„Kameraden einladen"**. Du erhältst einen **Beitritts-Link und
+  QR-Code**. Wer ihn öffnet bzw. scannt, ist sofort verbunden — die anderen müssen
+  das Supabase-Setup **nicht** selbst durchlaufen.
+  > ⚠️ Jeder mit diesem Link kann die Team-Daten sehen und bearbeiten. Teile ihn nur
+  > mit Personen, die Zugriff haben sollen.
 - **Einstellungen ändern:** Tippe in der App oben rechts auf das **Zahnrad** →
   **„Verbindung ändern"**, um Werte zu korrigieren oder das Team zu wechseln.
   (Alternativ `?setup` an die Adresse anhängen.)
@@ -100,10 +114,10 @@ sind ab jetzt live synchron.
 ## Sicherheit & Datenschutz
 
 - Die Daten liegen in **deinem eigenen** Supabase-Projekt — du bist Eigentümer:in.
-- Die obige Zugriffsregel erlaubt jedem mit Project-URL **und** anon-Key Lese- und
-  Schreibzugriff auf die Teamdaten dieses Projekts. Für eine einzelne Wehr mit eigenem
-  Projekt ist das in Ordnung. Wer mehrere Wehren in **einem** Projekt trennen möchte,
-  sollte die Regel um eine zusätzliche Prüfung erweitern.
+- Die obige Zugriffsregel erlaubt jedem mit Project-URL **und** Publishable Key Lese-
+  und Schreibzugriff auf die Teamdaten dieses Projekts. Für eine einzelne Wehr mit
+  eigenem Projekt ist das in Ordnung. Wer mehrere Wehren in **einem** Projekt trennen
+  möchte, sollte die Regel um eine zusätzliche Prüfung erweitern.
 - Wähle die Region **Frankfurt/EU**, damit die personenbezogenen Daten in der EU bleiben.
 
 ---
@@ -113,5 +127,5 @@ sind ab jetzt live synchron.
 | Problem | Lösung |
 |---|---|
 | „Tabelle team_state nicht gefunden" | Das SQL aus Schritt 3 wurde noch nicht (vollständig) ausgeführt. |
-| „Verbindung fehlgeschlagen" | Project-URL oder anon-Key falsch kopiert. Beide aus **Settings → API** erneut übernehmen. |
+| „Verbindung fehlgeschlagen" | Project-URL oder Publishable Key falsch kopiert. Beide über **Connect** bzw. **Settings → API Keys** erneut übernehmen. |
 | Sync funktioniert nicht zwischen Geräten | Gleiche Adresse und exakt gleicher Team-Name auf allen Geräten? Im SQL-Schritt wurde die Realtime-Zeile ausgeführt? |

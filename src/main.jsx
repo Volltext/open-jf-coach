@@ -3,23 +3,45 @@ import ReactDOM from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import SetupWizard from './SetupWizard';
-import { getEnvBackendConfig, readRuntimeConfig } from './backendConfig';
+import JoinPrompt from './JoinPrompt';
+import { decodeJoinPayload, getEnvBackendConfig, readRuntimeConfig } from './backendConfig';
 import './index.css';
 
 // Mit "?setup" in der Adresse lässt sich der Einrichtungs-Assistent jederzeit
 // erneut öffnen, um z. B. das Team zu wechseln oder Werte zu korrigieren.
 const forceSetup = /[?&#]setup\b/.test(window.location.search + window.location.hash);
 
+// Beitritts-Link (#join=… oder ?join=…): erlaubt Kameraden den Beitritt ohne Setup.
+function getJoinPayload() {
+  const hash = window.location.hash.replace(/^#/, '');
+  return new URLSearchParams(hash).get('join') || new URLSearchParams(window.location.search).get('join');
+}
+
 // Build-Zeit-Konfiguration (Firebase per .env) hat immer Vorrang und kann nicht
-// über den Assistenten überschrieben werden — sie ist bewusst vom Betreiber gesetzt.
+// über Assistent oder Beitritts-Link überschrieben werden — sie ist bewusst vom
+// Betreiber gesetzt.
 const envConfig = getEnvBackendConfig();
 const runtimeConfig = readRuntimeConfig();
+const joinPayload = getJoinPayload();
+const joinConfig = joinPayload ? decodeJoinPayload(joinPayload) : null;
 
 registerSW({ immediate: true });
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-if (!envConfig && (forceSetup || !runtimeConfig)) {
+function cleanUrlAndReload() {
+  window.history.replaceState(null, '', window.location.pathname);
+  window.location.reload();
+}
+
+if (!envConfig && joinConfig) {
+  // Über einen Beitritts-Link geöffnet: zur Bestätigung anbieten.
+  root.render(
+    <React.StrictMode>
+      <JoinPrompt config={joinConfig} onCancel={cleanUrlAndReload} />
+    </React.StrictMode>
+  );
+} else if (!envConfig && (forceSetup || !runtimeConfig)) {
   // Kein Backend konfiguriert (oder Neukonfiguration gewünscht): Assistent zeigen.
   root.render(
     <React.StrictMode>

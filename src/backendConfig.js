@@ -47,7 +47,7 @@ export function readRuntimeConfig() {
     if (
       parsed?.provider === 'supabase'
       && parsed.supabase?.url
-      && parsed.supabase?.anonKey
+      && parsed.supabase?.apiKey
       && parsed.teamId
     ) {
       return parsed;
@@ -73,4 +73,46 @@ export function clearRuntimeConfig() {
 // Welche Konfiguration soll die App tatsächlich verwenden?
 export function resolveBackendConfig() {
   return getEnvBackendConfig() ?? readRuntimeConfig() ?? null;
+}
+
+// --- Beitritts-Link (Weg 2) ---
+//
+// Kodiert die Verbindungsdaten kompakt und URL-sicher, damit ein einmal
+// eingerichtetes Team per Link/QR-Code geteilt werden kann. Kameraden müssen so
+// das Supabase-Setup nicht selbst durchlaufen.
+
+function padBase64(value) {
+  return value + '='.repeat((4 - (value.length % 4)) % 4);
+}
+
+export function encodeJoinPayload(config) {
+  const json = JSON.stringify({
+    provider: config.provider,
+    supabase: config.supabase,
+    teamId: config.teamId
+  });
+  // encodeURIComponent stellt reines ASCII sicher, danach Base64-URL-Variante.
+  return btoa(encodeURIComponent(json))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+export function decodeJoinPayload(encoded) {
+  try {
+    const base64 = padBase64(String(encoded).replace(/-/g, '+').replace(/_/g, '/'));
+    const json = decodeURIComponent(atob(base64));
+    const parsed = JSON.parse(json);
+    if (
+      parsed?.provider === 'supabase'
+      && parsed.supabase?.url
+      && parsed.supabase?.apiKey
+      && parsed.teamId
+    ) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }

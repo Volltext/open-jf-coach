@@ -40,6 +40,7 @@ import { extractSyncStateFromApp, initCloudSync, mergeRemoteStateIntoApp } from 
 import { createDefaultState, loadAppState, saveAppState, normaliseState } from './storage';
 import { getEnvBackendConfig, readRuntimeConfig } from './backendConfig';
 import { usePwaInstall } from './usePwaInstall';
+import ShareTeam from './ShareTeam';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
   day: '2-digit',
@@ -152,6 +153,7 @@ function App() {
   const [pendingDeleteRunId, setPendingDeleteRunId] = useState(null);
   const [syncBannerCollapsed, setSyncBannerCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const pwa = usePwaInstall();
   const activeBackend = useMemo(() => {
@@ -1932,13 +1934,25 @@ function App() {
             </div>
 
             {activeBackend?.editable ? (
-              <button
-                type="button"
-                className="secondary-btn full-width-btn"
-                onClick={() => window.location.assign(`${window.location.pathname}?setup`)}
-              >
-                Verbindung ändern
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="secondary-btn full-width-btn"
+                  onClick={() => {
+                    setShowSettings(false);
+                    setShowShare(true);
+                  }}
+                >
+                  <LinkIcon size={16} /> Kameraden einladen
+                </button>
+                <button
+                  type="button"
+                  className="secondary-btn full-width-btn"
+                  onClick={() => window.location.assign(`${window.location.pathname}?setup`)}
+                >
+                  Verbindung ändern
+                </button>
+              </>
             ) : (
               <p className="settings-hint">
                 Die Verbindung wurde vom Betreiber fest konfiguriert und kann hier nicht geändert werden.
@@ -1966,6 +1980,8 @@ function App() {
           </div>
         </div>
       )}
+
+      {showShare && <ShareTeam onClose={() => setShowShare(false)} />}
 
       {toast && (
         <div className="toast" role="status" aria-live="polite">

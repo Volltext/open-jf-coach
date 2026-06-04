@@ -42,13 +42,13 @@ export default function SetupWizard({ onComplete }) {
   const existing = readRuntimeConfig();
   const [teamName, setTeamName] = useState(existing?.teamId ?? '');
   const [url, setUrl] = useState(existing?.supabase?.url ?? '');
-  const [anonKey, setAnonKey] = useState(existing?.supabase?.anonKey ?? '');
+  const [apiKey, setApiKey] = useState(existing?.supabase?.apiKey ?? '');
   const [status, setStatus] = useState('idle'); // idle | testing | error
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
   const teamId = normaliseTeamId(teamName);
-  const canSubmit = url.trim() && anonKey.trim() && teamId;
+  const canSubmit = url.trim() && apiKey.trim() && teamId;
 
   async function copySql() {
     try {
@@ -69,7 +69,7 @@ export default function SetupWizard({ onComplete }) {
     setError('');
 
     try {
-      const client = createClient(url.trim(), anonKey.trim(), {
+      const client = createClient(url.trim(), apiKey.trim(), {
         auth: { persistSession: false }
       });
       const { error: testError } = await client.from('team_state').select('team_id').limit(1);
@@ -85,14 +85,14 @@ export default function SetupWizard({ onComplete }) {
 
       saveRuntimeConfig({
         provider: 'supabase',
-        supabase: { url: url.trim(), anonKey: anonKey.trim() },
+        supabase: { url: url.trim(), apiKey: apiKey.trim() },
         teamId
       });
       onComplete();
     } catch (caught) {
       setStatus('error');
       setError(
-        `Verbindung fehlgeschlagen. Bitte Projekt-URL und anon-Key prüfen. (Details: ${caught?.message ?? caught})`
+        `Verbindung fehlgeschlagen. Bitte Projekt-URL und Publishable Key prüfen. (Details: ${caught?.message ?? caught})`
       );
     }
   }
@@ -147,8 +147,11 @@ export default function SetupWizard({ onComplete }) {
           anlegen und ein neues Projekt erstellen (Region <strong>EU/Frankfurt</strong> empfohlen).
         </li>
         <li style={{ marginBottom: '0.5rem' }}>
-          Im Projekt unter <strong>Settings → API</strong> die <strong>Project URL</strong> und den{' '}
-          <strong>anon public</strong>-Key kopieren und unten eintragen.
+          Oben im Dashboard auf <strong>Connect</strong> klicken (oder links{' '}
+          <strong>Settings → API Keys</strong>). Dort findest du beides:
+          die <strong>Project URL</strong> (z. B. <code>https://xxxxx.supabase.co</code>) und den{' '}
+          <strong>Publishable Key</strong> (beginnt mit <code>sb_publishable_</code>).
+          Beide unten eintragen.
         </li>
         <li style={{ marginBottom: '0.5rem' }}>
           Unter <strong>SQL Editor</strong> dieses SQL einfügen und ausführen:
@@ -216,12 +219,12 @@ export default function SetupWizard({ onComplete }) {
         </label>
 
         <label style={labelStyle}>
-          Supabase anon public Key
+          Supabase Publishable Key
           <input
             style={fieldStyle}
-            value={anonKey}
-            onChange={(e) => setAnonKey(e.target.value)}
-            placeholder="eyJhbGciOi..."
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="sb_publishable_…"
             autoComplete="off"
           />
         </label>
