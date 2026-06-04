@@ -87,11 +87,13 @@ sind ab jetzt live synchron.
 
 - **App teilen:** Gib deinen Betreuer:innen einfach die Adresse weiter. Sie tragen
   beim ersten Start dieselben drei Werte ein — danach läuft alles synchron.
-- **Einstellungen ändern:** Hänge `?setup` an die Adresse an
-  (z. B. `https://…netlify.app/?setup`), um den Assistenten erneut zu öffnen und
-  Werte zu korrigieren oder das Team zu wechseln.
-- **Als App installieren:** Über das Browser-Menü „Zum Startbildschirm hinzufügen"
-  läuft JF-Coach wie eine echte App (auch offline).
+- **Einstellungen ändern:** Tippe in der App oben rechts auf das **Zahnrad** →
+  **„Verbindung ändern"**, um Werte zu korrigieren oder das Team zu wechseln.
+  (Alternativ `?setup` an die Adresse anhängen.)
+- **Als App installieren:** JF-Coach zeigt unterstützenden Browsern automatisch
+  einen **„Installieren"-Hinweis**. Alternativ über das Zahnrad-Menü oder
+  „Zum Startbildschirm hinzufügen". Installiert läuft die App wie eine echte
+  App – auch offline.
 
 ---
 

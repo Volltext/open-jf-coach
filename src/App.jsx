@@ -15,7 +15,9 @@ import {
   RotateCcw,
   Save,
   Search,
+  Settings,
   Shield,
+  Smartphone,
   Timer,
   Trash2,
   Users,
@@ -36,6 +38,8 @@ import { KNOT_GUIDES, POSITION_GUIDES, RULE_ENTRIES } from './knowledge';
 import { computeScore, getScoringConfig, resolveFehlerList, sumFehlerpunkte } from './scoring';
 import { extractSyncStateFromApp, initCloudSync, mergeRemoteStateIntoApp } from './cloudSync';
 import { createDefaultState, loadAppState, saveAppState, normaliseState } from './storage';
+import { getEnvBackendConfig, readRuntimeConfig } from './backendConfig';
+import { usePwaInstall } from './usePwaInstall';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
   day: '2-digit',
@@ -147,6 +151,20 @@ function App() {
   const [toast, setToast] = useState(null);
   const [pendingDeleteRunId, setPendingDeleteRunId] = useState(null);
   const [syncBannerCollapsed, setSyncBannerCollapsed] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const pwa = usePwaInstall();
+  const activeBackend = useMemo(() => {
+    const env = getEnvBackendConfig();
+    if (env) {
+      return { provider: 'firebase', teamId: env.teamId, editable: false };
+    }
+    const runtime = readRuntimeConfig();
+    if (runtime) {
+      return { provider: runtime.provider, teamId: runtime.teamId, editable: true };
+    }
+    return null;
+  }, []);
 
   const cloudRef = useRef(null);
   const toastTimeoutRef = useRef(null);
@@ -963,6 +981,42 @@ function App() {
   return (
     <div className="mockup-app-shell">
       <main className="app-main">
+        <div className="app-topbar">
+          <button
+            type="button"
+            className="icon-button"
+            onClick={() => setShowSettings(true)}
+            aria-label="Einstellungen"
+          >
+            <Settings size={20} />
+          </button>
+        </div>
+
+        {pwa.shouldShow && (
+          <div className="install-banner" role="region" aria-label="App installieren">
+            <Smartphone size={22} />
+            <div className="install-banner-text">
+              <strong>JF-Coach als App installieren</strong>
+              {pwa.isIos
+                ? 'In Safari: unten auf „Teilen" tippen, dann „Zum Home-Bildschirm".'
+                : 'Schneller starten und offline nutzen — direkt vom Startbildschirm.'}
+            </div>
+            {pwa.canPrompt && (
+              <button type="button" className="install-action" onClick={pwa.promptInstall}>
+                Installieren
+              </button>
+            )}
+            <button
+              type="button"
+              className="install-dismiss"
+              onClick={pwa.dismiss}
+              aria-label="Hinweis ausblenden"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
         <div className={`sync-banner ${syncStatus} ${syncBannerCollapsed ? 'collapsed' : ''}`} role="status" aria-live="polite">
           <strong>Sync:</strong>{' '}
           {syncStatus === 'connected' && 'Verbunden'}
@@ -1854,6 +1908,61 @@ function App() {
                 Löschen bestätigen
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div className="sheet-backdrop centered" onClick={() => setShowSettings(false)}>
+          <div className="confirm-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="card-head">
+              <h3>Einstellungen</h3>
+              <button type="button" className="icon-button" onClick={() => setShowSettings(false)} aria-label="Schließen">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="settings-row">
+              <span className="settings-label">Datenspeicher</span>
+              <span className="settings-value">
+                {activeBackend
+                  ? `${activeBackend.provider === 'supabase' ? 'Supabase' : 'Firebase'} · Team „${activeBackend.teamId}"`
+                  : 'Nicht verbunden'}
+              </span>
+            </div>
+
+            {activeBackend?.editable ? (
+              <button
+                type="button"
+                className="secondary-btn full-width-btn"
+                onClick={() => window.location.assign(`${window.location.pathname}?setup`)}
+              >
+                Verbindung ändern
+              </button>
+            ) : (
+              <p className="settings-hint">
+                Die Verbindung wurde vom Betreiber fest konfiguriert und kann hier nicht geändert werden.
+              </p>
+            )}
+
+            {pwa.canPrompt && (
+              <button
+                type="button"
+                className="secondary-btn full-width-btn"
+                onClick={() => {
+                  setShowSettings(false);
+                  pwa.promptInstall();
+                }}
+              >
+                <Smartphone size={16} /> Als App installieren
+              </button>
+            )}
+            {!pwa.canPrompt && pwa.isIos && !pwa.isStandalone && (
+              <ol className="ios-install-steps">
+                <li>In Safari unten auf „Teilen" tippen.</li>
+                <li>„Zum Home-Bildschirm" wählen.</li>
+              </ol>
+            )}
           </div>
         </div>
       )}

@@ -162,6 +162,84 @@ textarea:focus {
   margin-bottom: -1rem;
 }
 
+.app-topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: -0.35rem;
+}
+
+.install-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.install-banner-text {
+  flex: 1;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.install-banner-text strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--text);
+}
+
+.install-banner .install-action {
+  background: var(--accent);
+  color: #1f2937;
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.install-banner .install-dismiss {
+  background: transparent;
+  color: var(--muted);
+  padding: 0.25rem;
+  display: inline-flex;
+}
+
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+  margin: 0.75rem 0 1rem;
+}
+
+.settings-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.settings-value {
+  font-weight: 600;
+}
+
+.settings-hint {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0 0 0.5rem;
+}
+
+.ios-install-steps {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .tab-screen {
   display: grid;
   gap: 1rem;
