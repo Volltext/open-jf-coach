@@ -9,6 +9,7 @@ import {
   ChevronRight,
   CircleDashed,
   Download,
+  Eye,
   Link as LinkIcon,
   Minus,
   Moon,
@@ -149,7 +150,7 @@ function getDisplayName(memberId, memberMap, record) {
   return memberMap[memberId]?.name ?? record?.lineupSnapshot?.memberNames?.[memberId] ?? 'Unbekannt';
 }
 
-function App() {
+function App({ isDemo = false }) {
   const [appState, setAppState] = useState(() => createDefaultState());
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('stopwatch');
@@ -177,7 +178,12 @@ function App() {
   const [displaySyncStatus, setDisplaySyncStatus] = useState('offline');
   const [showSettings, setShowSettings] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showDemoNote, setShowDemoNote] = useState(true);
   const [theme, setTheme] = useState(getInitialTheme);
+
+  function openSetup() {
+    window.location.assign(`${window.location.pathname}?setup`);
+  }
 
   // Theme auf das Wurzel-Element anwenden und Auswahl merken.
   useEffect(() => {
@@ -1036,6 +1042,27 @@ function App() {
               type="button"
               className="install-dismiss"
               onClick={pwa.dismiss}
+              aria-label="Hinweis ausblenden"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
+        {isDemo && showDemoNote && (
+          <div className="demo-banner" role="region" aria-label="Demo-Modus">
+            <Eye size={22} />
+            <div className="demo-banner-text">
+              <strong>Demo-Modus</strong>
+              Alles läuft nur auf diesem Gerät — nichts wird synchronisiert.
+            </div>
+            <button type="button" className="demo-action" onClick={openSetup}>
+              Einrichten
+            </button>
+            <button
+              type="button"
+              className="demo-dismiss"
+              onClick={() => setShowDemoNote(false)}
               aria-label="Hinweis ausblenden"
             >
               <X size={18} />
@@ -1966,6 +1993,8 @@ function App() {
               <span className="settings-value">
                 {activeBackend
                   ? `${activeBackend.provider === 'supabase' ? 'Supabase' : 'Firebase'} · Team „${activeBackend.teamId}"`
+                  : isDemo
+                  ? 'Demo · nur auf diesem Gerät'
                   : 'Nicht verbunden'}
               </span>
             </div>
@@ -2007,11 +2036,15 @@ function App() {
                 <button
                   type="button"
                   className="secondary-btn full-width-btn"
-                  onClick={() => window.location.assign(`${window.location.pathname}?setup`)}
+                  onClick={openSetup}
                 >
                   Verbindung ändern
                 </button>
               </>
+            ) : isDemo ? (
+              <button type="button" className="secondary-btn full-width-btn" onClick={openSetup}>
+                <LinkIcon size={16} /> Einrichten &amp; synchronisieren
+              </button>
             ) : (
               <p className="settings-hint">
                 Die Verbindung wurde vom Betreiber fest konfiguriert und kann hier nicht geändert werden.

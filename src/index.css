@@ -1699,3 +1699,254 @@ textarea:focus-visible {
   gap: 0.5rem;
   margin-top: 0.75rem;
 }
+
+/* --- Einrichtungs-Assistent --- */
+.setup-page {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1.75rem 1rem calc(2.5rem + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 1rem;
+}
+
+.setup-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.setup-brand-badge {
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow);
+}
+
+.setup-brand h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.setup-brand p {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.setup-lead {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.setup-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem 1.2rem;
+}
+
+.setup-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1rem;
+  counter-reset: setup-step;
+}
+
+.setup-steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  line-height: 1.5;
+}
+
+.setup-steps li::before {
+  counter-increment: setup-step;
+  content: counter(setup-step);
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  background: var(--inset);
+  border: 1px solid var(--border);
+  color: var(--accent-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.setup-steps a {
+  color: var(--accent-text);
+}
+
+.setup-steps code,
+.setup-field-hint code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--inset);
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--r-xs);
+}
+
+.setup-sql {
+  position: relative;
+  margin-top: 0.6rem;
+}
+
+.setup-sql pre {
+  margin: 0;
+  background: var(--bg-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2.6rem 0.8rem 0.8rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.setup-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--r-xs);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.setup-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.setup-field > span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.setup-field-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.setup-error {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  border-radius: var(--r-sm);
+  color: var(--text-danger);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.setup-submit {
+  width: 100%;
+  min-height: 3.1rem;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.setup-submit:disabled {
+  background: var(--surface-muted);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.setup-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.setup-divider::before,
+.setup-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.setup-footer-link {
+  margin: 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.setup-footer-link a {
+  color: var(--accent-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* --- Demo-Modus-Hinweis --- */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: var(--r-md);
+  padding: 0.7rem 0.85rem;
+  background: rgba(var(--accent-rgb), 0.12);
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.demo-banner > svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.demo-banner-text {
+  flex: 1;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.demo-banner-text strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--text);
+}
+
+.demo-banner .demo-action {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--r-sm);
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.demo-banner .demo-dismiss {
+  background: transparent;
+  color: var(--muted);
+  padding: 0.25rem;
+  display: inline-flex;
+}
