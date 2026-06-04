@@ -47,7 +47,7 @@ export function readRuntimeConfig() {
     if (
       parsed?.provider === 'supabase'
       && parsed.supabase?.url
-      && parsed.supabase?.anonKey
+      && parsed.supabase?.apiKey
       && parsed.teamId
     ) {
       return parsed;

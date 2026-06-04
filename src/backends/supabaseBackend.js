@@ -13,7 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 const TABLE = 'team_state';
 
 export function createSupabaseBackend(config) {
-  const client = createClient(config.supabase.url, config.supabase.anonKey, {
+  const client = createClient(config.supabase.url, config.supabase.apiKey, {
     auth: { persistSession: false }
   });
   const teamId = config.teamId;
