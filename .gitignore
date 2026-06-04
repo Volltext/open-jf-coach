@@ -7,6 +7,14 @@ node_modules/
 dist/
 build/
 
+# Versehentlich im Repo-Root gelandete PWA-/Build-Artefakte
+# (werden vom Build in dist/ neu erzeugt – gehören nicht in die Versionierung)
+/sw.js
+/workbox-*.js
+/manifest.webmanifest
+/version.json
+/assets/
+
 # Environment variables
 .env
 .env.local
