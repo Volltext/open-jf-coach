@@ -62,6 +62,18 @@ function getInitialTheme() {
   }
 }
 
+const SYNC_STATUS_LABELS = {
+  connected: 'Verbunden',
+  syncing: 'Synchronisiert…',
+  connecting: 'Verbinde…',
+  error: 'Sync-Fehler',
+  offline: 'Offline'
+};
+
+function syncStatusLabel(status) {
+  return SYNC_STATUS_LABELS[status] ?? 'Offline';
+}
+
 function getOrCreateDeviceId() {
   try {
     const existing = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
@@ -162,7 +174,7 @@ function App() {
   const [targetInput, setTargetInput] = useState('');
   const [toast, setToast] = useState(null);
   const [pendingDeleteRunId, setPendingDeleteRunId] = useState(null);
-  const [syncBannerCollapsed, setSyncBannerCollapsed] = useState(false);
+  const [displaySyncStatus, setDisplaySyncStatus] = useState('offline');
   const [showSettings, setShowSettings] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [theme, setTheme] = useState(getInitialTheme);
@@ -351,15 +363,16 @@ function App() {
     });
   }, [appState.stopwatchDraft.targetSeconds]);
 
-  // Sync-Banner bei stabiler Verbindung nach kurzer Zeit einklappen, damit es im
-  // Normalbetrieb keinen Platz belegt. Fehler/Offline/Verbinden bleiben sichtbar.
+  // Transiente Zustände (syncing/connecting) entprellen, damit der Indikator beim
+  // Timer-Start o. Ä. nicht ständig kurz auf Orange flackert. Stabile Zustände
+  // (connected/error/offline) werden sofort übernommen – Fehler bleiben sichtbar.
   useEffect(() => {
-    if (syncStatus !== 'connected') {
-      setSyncBannerCollapsed(false);
-      return undefined;
+    if (syncStatus === 'syncing' || syncStatus === 'connecting') {
+      const timerId = window.setTimeout(() => setDisplaySyncStatus(syncStatus), 800);
+      return () => window.clearTimeout(timerId);
     }
-    const timerId = window.setTimeout(() => setSyncBannerCollapsed(true), 2500);
-    return () => window.clearTimeout(timerId);
+    setDisplaySyncStatus(syncStatus);
+    return undefined;
   }, [syncStatus]);
 
   useEffect(() => () => {
@@ -1031,13 +1044,16 @@ function App() {
         )}
 
         <div className="app-statusbar">
-          <div className={`sync-banner ${syncStatus} ${syncBannerCollapsed ? 'collapsed' : ''}`} role="status" aria-live="polite">
-            <strong>Sync:</strong>{' '}
-            {syncStatus === 'connected' && 'Verbunden'}
-            {syncStatus === 'syncing' && 'Synchronisiert...'}
-            {syncStatus === 'connecting' && 'Verbinde...'}
-            {syncStatus === 'error' && 'Fehler'}
-            {syncStatus === 'offline' && 'Offline'}
+          <div
+            className={`sync-indicator ${displaySyncStatus}`}
+            role="status"
+            aria-live="polite"
+            title={`Sync: ${syncStatusLabel(displaySyncStatus)}`}
+          >
+            <span className="sync-dot" aria-hidden="true" />
+            {displaySyncStatus !== 'connected' && (
+              <span className="sync-label">{syncStatusLabel(displaySyncStatus)}</span>
+            )}
           </div>
           <button
             type="button"
