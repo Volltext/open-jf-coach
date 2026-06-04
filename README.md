@@ -16,7 +16,7 @@ Mobile-first PWA für Aufstellung, Stoppuhr, Analyse und Wissensdatenbank im Jug
 ## Tech-Stack
 
 - [React](https://react.dev/) + [Vite](https://vitejs.dev/)
-- [Firebase](https://firebase.google.com/) (Firestore + Auth)
+- Backend wahlweise [Supabase](https://supabase.com/) oder [Firebase](https://firebase.google.com/) (Firestore + Auth)
 - [Workbox](https://developer.chrome.com/docs/workbox/) (PWA / Offline-Support)
 - [lucide-react](https://lucide.dev/) (Icons)
 
@@ -24,16 +24,31 @@ Mobile-first PWA für Aufstellung, Stoppuhr, Analyse und Wissensdatenbank im Jug
 
 ## Eigene Instanz aufsetzen
 
-### Schnellstart via Netlify
+Es gibt **zwei Wege** — wähle den, der zu dir passt. Beide funktionieren parallel.
+
+### 🟢 Einfacher Weg (ohne Technik) — Supabase
+
+Für alle, die **nicht** selbst hosten oder bauen wollen. Du nutzt eine bereits
+veröffentlichte JF-Coach-Adresse und verbindest sie über einen
+**Einrichtungs-Assistenten** in der App mit deinem eigenen kostenlosen
+Datenspeicher. Kein Terminal, kein Build, kein Hosting.
+
+→ Anleitung: **[docs/supabase-setup.md](docs/supabase-setup.md)**
+
+### 🔧 Profi-Weg — Firebase per Build
+
+Für alle, die selbst bauen und hosten möchten. Die Firebase-Zugangsdaten werden
+beim Build als Umgebungsvariablen hinterlegt.
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/amgiparker/open-jf-coach)
 
-Nach dem Klick auf "Deploy" musst du deine Firebase-Credentials als Umgebungsvariablen in Netlify eintragen. Die vollständige Anleitung findest du unter [docs/deployment.md](docs/deployment.md).
-
-### Schritt-für-Schritt
-
 1. **Firebase einrichten** → [FIREBASE_SETUP.md](FIREBASE_SETUP.md)
 2. **App deployen** → [docs/deployment.md](docs/deployment.md)
+
+> **Hinweis für Betreiber:** Sind die `VITE_FIREBASE_*`-Variablen beim Build gesetzt,
+> nutzt die App automatisch Firebase und der Supabase-Assistent erscheint nicht.
+> Für eine öffentliche „Selbst-verbinden"-Instanz die Firebase-Variablen einfach
+> **nicht** setzen.
 
 ---
 
