@@ -125,24 +125,30 @@ export default function SetupWizard({ onComplete, onDemo }) {
       <article className="surface-card setup-card">
         <ol className="setup-steps">
           <li>
-            Kostenloses Konto auf{' '}
-            <a href="https://supabase.com" target="_blank" rel="noreferrer">supabase.com</a>{' '}
-            anlegen und ein neues Projekt erstellen (Region <strong>EU/Frankfurt</strong> empfohlen).
+            <div className="setup-step-body">
+              Kostenloses Konto auf{' '}
+              <a href="https://supabase.com" target="_blank" rel="noreferrer">supabase.com</a>{' '}
+              anlegen und ein neues Projekt erstellen (Region <strong>EU/Frankfurt</strong> empfohlen).
+            </div>
           </li>
           <li>
-            Oben im Dashboard auf <strong>Connect</strong> klicken (oder links{' '}
-            <strong>Settings → API Keys</strong>). Dort findest du beides: die{' '}
-            <strong>Project URL</strong> (z. B. <code>https://xxxxx.supabase.co</code>) und den{' '}
-            <strong>Publishable Key</strong> (beginnt mit <code>sb_publishable_</code>). Beide unten eintragen.
+            <div className="setup-step-body">
+              Oben im Dashboard auf <strong>Connect</strong> klicken (oder links{' '}
+              <strong>Settings → API Keys</strong>). Dort findest du beides: die{' '}
+              <strong>Project URL</strong> (z. B. <code>https://xxxxx.supabase.co</code>) und den{' '}
+              <strong>Publishable Key</strong> (beginnt mit <code>sb_publishable_</code>). Beide unten eintragen.
+            </div>
           </li>
           <li>
-            Unter <strong>SQL Editor</strong> dieses SQL einfügen und ausführen:
-            <div className="setup-sql">
-              <button type="button" className="setup-copy" onClick={copySql}>
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? 'Kopiert' : 'Kopieren'}
-              </button>
-              <pre>{SETUP_SQL}</pre>
+            <div className="setup-step-body">
+              Unter <strong>SQL Editor</strong> dieses SQL einfügen und ausführen:
+              <div className="setup-sql">
+                <button type="button" className="setup-copy" onClick={copySql}>
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? 'Kopiert' : 'Kopieren'}
+                </button>
+                <pre>{SETUP_SQL}</pre>
+              </div>
             </div>
           </li>
         </ol>
