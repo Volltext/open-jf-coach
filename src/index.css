@@ -112,6 +112,7 @@ textarea:focus {
 }
 
 .mockup-app-shell {
+  position: relative;
   min-height: 100vh;
   padding: 1.25rem 1rem calc(6rem + env(safe-area-inset-bottom));
   max-width: 32rem;
@@ -137,41 +138,40 @@ textarea:focus {
   gap: 1rem;
 }
 
-.sync-banner {
-  border-radius: var(--r-sm);
-  padding: 0.65rem 0.8rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
+/* Dezenter Sync-Indikator: im Normalfall nur ein kleiner Punkt, sonst Punkt + Label. */
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1;
   color: var(--muted);
-  font-size: 0.84rem;
 }
 
-.sync-banner.connected {
-  color: var(--text-success);
+.sync-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.3s ease;
 }
 
-.sync-banner.syncing,
-.sync-banner.connecting {
-  color: var(--text-warning);
+.sync-indicator.connected .sync-dot {
+  background: var(--text-success);
 }
 
-.sync-banner.error {
+.sync-indicator.syncing .sync-dot,
+.sync-indicator.connecting .sync-dot {
+  background: var(--text-warning);
+}
+
+.sync-indicator.error .sync-dot {
+  background: var(--text-danger);
+}
+
+.sync-indicator.error .sync-label {
   color: var(--text-danger);
-}
-
-.sync-banner {
-  overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
-  max-height: 4rem;
-}
-
-.sync-banner.collapsed {
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  border-width: 0;
-  opacity: 0;
-  margin-bottom: -1rem;
 }
 
 .tab-screen {
@@ -1590,26 +1590,35 @@ textarea:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Topbar (Einstellungen-Button) --- */
+/* --- Topbar (Sync-Punkt + Einstellungen) ---
+   Schwebt in der oberen rechten Ecke und belegt dadurch keine eigene Zeile
+   bzw. keinen vertikalen Platz im Grid. */
 .app-statusbar {
+  position: absolute;
+  top: 1.25rem;
+  right: 1rem;
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.app-statusbar .sync-banner {
-  flex: 1;
-  min-width: 0;
-}
-
-.app-statusbar .sync-banner.collapsed {
-  /* In der Flex-Zeile reicht das Ausblenden des Banners; das Zahnrad bleibt. */
-  margin-bottom: 0;
+/* Platz für den schwebenden Knopf reservieren, damit die Tab-Überschriften und
+   ihre rechtsbündigen Bedienelemente nicht darunter verschwinden. */
+.section-head {
+  padding-right: 3rem;
 }
 
 .settings-gear {
   flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
   color: var(--muted);
+}
+
+.settings-gear:hover {
+  color: var(--text);
 }
 
 /* --- PWA-Installationshinweis --- */
