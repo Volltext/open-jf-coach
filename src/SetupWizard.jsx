@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { ArrowRight, Check, Copy, Eye, Timer } from 'lucide-react';
 import { clearRuntimeConfig, readRuntimeConfig, saveRuntimeConfig } from './backendConfig';
 
 // Idempotentes SQL: legt Tabelle, Zugriffsregel und Realtime an. Kann gefahrlos
@@ -28,17 +29,16 @@ function normaliseTeamId(raw) {
     .replace(/[^a-z0-9-]/g, '');
 }
 
-const COLORS = {
-  bg: '#1e2433',
-  accent: '#f25c2b',
-  text: '#f0f0f0',
-  muted: '#9aa4b8',
-  field: '#151a23',
-  border: '#2c3446',
-  error: '#fca5a5'
-};
+// Demo-Auswahl auch ohne aktiven Demo-Modus sauber wieder entfernen.
+function clearDemoFlag() {
+  try {
+    sessionStorage.removeItem('jf-coach-demo');
+  } catch {
+    // sessionStorage nicht verfügbar — nichts zu tun.
+  }
+}
 
-export default function SetupWizard({ onComplete }) {
+export default function SetupWizard({ onComplete, onDemo }) {
   const existing = readRuntimeConfig();
   const [teamName, setTeamName] = useState(existing?.teamId ?? '');
   const [url, setUrl] = useState(existing?.supabase?.url ?? '');
@@ -88,6 +88,7 @@ export default function SetupWizard({ onComplete }) {
         supabase: { url: url.trim(), apiKey: apiKey.trim() },
         teamId
       });
+      clearDemoFlag();
       onComplete();
     } catch (caught) {
       setStatus('error');
@@ -99,118 +100,71 @@ export default function SetupWizard({ onComplete }) {
 
   function handleDisconnect() {
     clearRuntimeConfig();
+    clearDemoFlag();
     onComplete();
   }
 
-  const fieldStyle = {
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: '0.6rem 0.75rem',
-    marginTop: '0.35rem',
-    background: COLORS.field,
-    color: COLORS.text,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: '8px',
-    fontSize: '0.95rem',
-    fontFamily: 'inherit'
-  };
-
-  const labelStyle = { display: 'block', marginTop: '1rem', fontSize: '0.9rem', color: COLORS.muted };
-
   return (
-    <div
-      style={{
-        fontFamily: 'sans-serif',
-        maxWidth: '640px',
-        margin: '2rem auto',
-        padding: '2rem',
-        background: COLORS.bg,
-        color: COLORS.text,
-        borderRadius: '12px',
-        border: `1px solid ${COLORS.accent}`,
-        lineHeight: 1.5
-      }}
-    >
-      <h2 style={{ color: COLORS.accent, marginTop: 0 }}>🚒 JF-Coach einrichten</h2>
-      <p>
+    <div className="setup-page">
+      <header className="setup-brand">
+        <div className="setup-brand-badge" aria-hidden="true">
+          <Timer size={26} />
+        </div>
+        <div>
+          <h1>JF-Coach einrichten</h1>
+          <p>Einmalige Einrichtung für deine Jugendfeuerwehr</p>
+        </div>
+      </header>
+
+      <p className="setup-lead">
         Damit deine Geräte synchron bleiben, braucht JF-Coach einen kostenlosen
-        Datenspeicher bei <strong>Supabase</strong>. Die Einrichtung dauert ein paar Minuten —
-        du machst sie nur einmal pro Jugendfeuerwehr.
+        Datenspeicher bei <strong>Supabase</strong>. Das dauert nur ein paar Minuten
+        und du machst es <strong>einmal pro Wehr</strong>.
       </p>
 
-      <ol style={{ paddingLeft: '1.2rem', color: COLORS.muted }}>
-        <li style={{ marginBottom: '0.5rem' }}>
-          Kostenloses Konto auf{' '}
-          <a href="https://supabase.com" target="_blank" rel="noreferrer" style={{ color: COLORS.accent }}>
-            supabase.com
-          </a>{' '}
-          anlegen und ein neues Projekt erstellen (Region <strong>EU/Frankfurt</strong> empfohlen).
-        </li>
-        <li style={{ marginBottom: '0.5rem' }}>
-          Oben im Dashboard auf <strong>Connect</strong> klicken (oder links{' '}
-          <strong>Settings → API Keys</strong>). Dort findest du beides:
-          die <strong>Project URL</strong> (z. B. <code>https://xxxxx.supabase.co</code>) und den{' '}
-          <strong>Publishable Key</strong> (beginnt mit <code>sb_publishable_</code>).
-          Beide unten eintragen.
-        </li>
-        <li style={{ marginBottom: '0.5rem' }}>
-          Unter <strong>SQL Editor</strong> dieses SQL einfügen und ausführen:
-          <div style={{ position: 'relative', marginTop: '0.5rem' }}>
-            <pre
-              style={{
-                background: COLORS.field,
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: '8px',
-                padding: '0.75rem',
-                overflowX: 'auto',
-                fontSize: '0.8rem',
-                color: COLORS.text,
-                whiteSpace: 'pre'
-              }}
-            >
-              {SETUP_SQL}
-            </pre>
-            <button
-              type="button"
-              onClick={copySql}
-              style={{
-                position: 'absolute',
-                top: '0.5rem',
-                right: '0.5rem',
-                background: COLORS.accent,
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '0.3rem 0.6rem',
-                cursor: 'pointer',
-                fontSize: '0.8rem'
-              }}
-            >
-              {copied ? 'Kopiert ✓' : 'Kopieren'}
-            </button>
-          </div>
-        </li>
-      </ol>
+      <article className="surface-card setup-card">
+        <ol className="setup-steps">
+          <li>
+            Kostenloses Konto auf{' '}
+            <a href="https://supabase.com" target="_blank" rel="noreferrer">supabase.com</a>{' '}
+            anlegen und ein neues Projekt erstellen (Region <strong>EU/Frankfurt</strong> empfohlen).
+          </li>
+          <li>
+            Oben im Dashboard auf <strong>Connect</strong> klicken (oder links{' '}
+            <strong>Settings → API Keys</strong>). Dort findest du beides: die{' '}
+            <strong>Project URL</strong> (z. B. <code>https://xxxxx.supabase.co</code>) und den{' '}
+            <strong>Publishable Key</strong> (beginnt mit <code>sb_publishable_</code>). Beide unten eintragen.
+          </li>
+          <li>
+            Unter <strong>SQL Editor</strong> dieses SQL einfügen und ausführen:
+            <div className="setup-sql">
+              <button type="button" className="setup-copy" onClick={copySql}>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? 'Kopiert' : 'Kopieren'}
+              </button>
+              <pre>{SETUP_SQL}</pre>
+            </div>
+          </li>
+        </ol>
+      </article>
 
-      <form onSubmit={handleSubmit}>
-        <label style={labelStyle}>
-          Team-Name (eindeutig für deine Wehr)
+      <form className="surface-card setup-card" onSubmit={handleSubmit}>
+        <label className="setup-field">
+          <span>Team-Name (eindeutig für deine Wehr)</span>
           <input
-            style={fieldStyle}
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
             placeholder="z. B. jf-musterstadt"
             autoComplete="off"
           />
+          {teamId && teamId !== teamName && (
+            <small className="setup-field-hint">Wird gespeichert als: <code>{teamId}</code></small>
+          )}
         </label>
-        {teamId && teamId !== teamName && (
-          <small style={{ color: COLORS.muted }}>Wird gespeichert als: <code>{teamId}</code></small>
-        )}
 
-        <label style={labelStyle}>
-          Supabase Project URL
+        <label className="setup-field">
+          <span>Supabase Project URL</span>
           <input
-            style={fieldStyle}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://xxxxx.supabase.co"
@@ -218,10 +172,9 @@ export default function SetupWizard({ onComplete }) {
           />
         </label>
 
-        <label style={labelStyle}>
-          Supabase Publishable Key
+        <label className="setup-field">
+          <span>Supabase Publishable Key</span>
           <input
-            style={fieldStyle}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="sb_publishable_…"
@@ -229,56 +182,37 @@ export default function SetupWizard({ onComplete }) {
           />
         </label>
 
-        {error && (
-          <p style={{ color: COLORS.error, marginTop: '1rem', fontSize: '0.9rem' }}>{error}</p>
-        )}
+        {error && <p className="setup-error">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={!canSubmit || status === 'testing'}
-          style={{
-            marginTop: '1.5rem',
-            width: '100%',
-            padding: '0.8rem',
-            background: canSubmit ? COLORS.accent : COLORS.border,
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '1rem',
-            cursor: canSubmit && status !== 'testing' ? 'pointer' : 'not-allowed'
-          }}
-        >
-          {status === 'testing' ? 'Verbindung wird getestet…' : 'Verbinden & loslegen'}
+        <button type="submit" className="setup-submit" disabled={!canSubmit || status === 'testing'}>
+          {status === 'testing' ? 'Verbindung wird getestet…' : (<>Verbinden &amp; loslegen <ArrowRight size={18} /></>)}
         </button>
+
+        {existing && (
+          <button type="button" className="secondary-btn full-width-btn" onClick={handleDisconnect}>
+            Verbindung trennen
+          </button>
+        )}
       </form>
 
-      {existing && (
-        <button
-          type="button"
-          onClick={handleDisconnect}
-          style={{
-            marginTop: '1rem',
-            width: '100%',
-            padding: '0.6rem',
-            background: 'transparent',
-            color: COLORS.muted,
-            border: `1px solid ${COLORS.border}`,
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          Verbindung trennen
-        </button>
+      {onDemo && (
+        <>
+          <div className="setup-divider">oder</div>
+          <button type="button" className="secondary-btn full-width-btn" onClick={onDemo}>
+            <Eye size={16} /> Erst mal ohne Einrichtung ansehen (Demo)
+          </button>
+          <p className="setup-footer-link">
+            Im Demo-Modus läuft alles nur auf diesem Gerät — ohne Sync. Du kannst die Einrichtung jederzeit nachholen.
+          </p>
+        </>
       )}
 
-      <p style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: COLORS.muted }}>
+      <p className="setup-footer-link">
         Ausführliche Anleitung:{' '}
         <a
           href="https://github.com/amgiparker/open-jf-coach/blob/main/docs/supabase-setup.md"
           target="_blank"
           rel="noreferrer"
-          style={{ color: COLORS.accent }}
         >
           docs/supabase-setup.md
         </a>
