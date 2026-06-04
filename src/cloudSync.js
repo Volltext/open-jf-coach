@@ -1,22 +1,13 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { doc, getFirestore, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+// Backend-unabhängige Sync-Schicht.
+//
+// `extractSyncStateFromApp` und `mergeRemoteStateIntoApp` formen nur den
+// auszutauschenden Zustand und sind unabhängig vom konkreten Backend.
+//
+// `initCloudSync` wählt anhand der aufgelösten Konfiguration den passenden
+// Adapter (Firebase oder Supabase), lädt ihn bei Bedarf nach und gibt die
+// gewohnte Schnittstelle { pushState, dispose } zurück.
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-const teamId = import.meta.env.VITE_FIREBASE_TEAM_ID;
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const stateDocRef = doc(db, 'teams', teamId, 'state', 'shared');
+import { resolveBackendConfig } from './backendConfig';
 
 function isMeaningfulArray(value) {
   return Array.isArray(value);
@@ -56,89 +47,64 @@ export function mergeRemoteStateIntoApp(currentState, remoteData) {
   };
 }
 
-export function initCloudSync({ onRemoteState, onStatus, onReady, onError }) {
-  let unsubscribeSnapshot = null;
-  let readySent = false;
+export function initCloudSync(handlers) {
+  const config = resolveBackendConfig();
 
-  function markReady() {
-    if (readySent) {
-      return;
-    }
-    readySent = true;
-    onReady?.();
+  if (!config) {
+    // Sollte nicht passieren — ohne Konfiguration zeigt die App den
+    // Einrichtungs-Assistenten statt der App selbst. Defensiv abgesichert.
+    handlers.onStatus?.('offline');
+    return { pushState() {}, dispose() {} };
   }
 
-  async function ensureSignedIn() {
-    if (auth.currentUser) {
-      return auth.currentUser;
-    }
-    const credential = await signInAnonymously(auth);
-    return credential.user;
-  }
+  let sync = null;
+  let disposed = false;
+  let pendingState = null;
+  let hasPending = false;
 
-  function attachSnapshotListener() {
-    unsubscribeSnapshot = onSnapshot(
-      stateDocRef,
-      (snapshot) => {
-        if (snapshot.metadata.hasPendingWrites) {
-          return;
-        }
-        onStatus?.('connected');
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          onRemoteState?.(data);
-        }
-        markReady();
-      },
-      (error) => {
-        onStatus?.('error');
-        onError?.(error);
-      }
-    );
-  }
-
-  const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+  async function start() {
     try {
-      onStatus?.('connecting');
-      const activeUser = user ?? (await ensureSignedIn());
-      if (!activeUser) {
+      let backend;
+      if (config.provider === 'firebase') {
+        const { createFirebaseBackend } = await import('./backends/firebaseBackend');
+        backend = createFirebaseBackend(config);
+      } else {
+        const { createSupabaseBackend } = await import('./backends/supabaseBackend');
+        backend = createSupabaseBackend(config);
+      }
+
+      if (disposed) {
         return;
       }
-      if (!unsubscribeSnapshot) {
-        attachSnapshotListener();
+
+      sync = backend.initSync(handlers);
+
+      // Vor dem Laden des Adapters eingegangene Zustände nachreichen.
+      if (hasPending) {
+        sync.pushState(pendingState);
+        hasPending = false;
+        pendingState = null;
       }
     } catch (error) {
-      onStatus?.('error');
-      onError?.(error);
-    }
-  });
-
-  async function pushState(syncState) {
-    try {
-      const activeUser = auth.currentUser ?? (await ensureSignedIn());
-      onStatus?.('syncing');
-      await setDoc(
-        stateDocRef,
-        {
-          ...syncState,
-          updatedAt: serverTimestamp(),
-          updatedBy: activeUser.uid
-        },
-        { merge: true }
-      );
-      onStatus?.('connected');
-      markReady();
-    } catch (error) {
-      onStatus?.('error');
-      onError?.(error);
+      handlers.onStatus?.('error');
+      handlers.onError?.(error);
     }
   }
 
+  start();
+
   return {
-    pushState,
+    pushState(syncState) {
+      if (sync) {
+        sync.pushState(syncState);
+      } else {
+        pendingState = syncState;
+        hasPending = true;
+      }
+    },
     dispose() {
-      unsubscribeSnapshot?.();
-      unsubscribeAuth?.();
+      disposed = true;
+      sync?.dispose();
     }
   };
 }
