@@ -1568,7 +1568,7 @@ function App({ isDemo = false }) {
         )}
 
         {activeTab === 'analysis' && (
-          <section className="tab-screen">
+          <section className="tab-screen analysis-screen">
             <div className="section-head">
               <h2>Analyse</h2>
             </div>
@@ -1767,7 +1767,7 @@ function App({ isDemo = false }) {
         )}
 
         {activeTab === 'knowledge' && (
-          <section className="tab-screen">
+          <section className="tab-screen knowledge-screen">
             <div className="section-head">
               <h2>Wissensdatenbank</h2>
             </div>
