@@ -7,6 +7,9 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Einfacher Einrichtungsweg über Supabase mit Assistent in der App (kein Build, kein Hosting nötig)
+- Austauschbares Backend: Supabase oder Firebase
+- Kameraden per Beitritts-Link und QR-Code einladen
 - Toast-Rückmeldung beim Speichern und Löschen von Trainingsläufen
 - Sicherheitsabfrage vor dem Löschen eines Trainingslaufs
 - Einzelne A-Teil-Zwischenzeiten und B-Teil-Aufgaben-Timer korrigierbar (zurücksetzen ohne kompletten Reset)

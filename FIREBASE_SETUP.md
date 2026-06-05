@@ -89,15 +89,16 @@ VITE_FIREBASE_TEAM_ID=jf-musterstadt
 
 ## Datenbankstruktur
 
-JF-Coach verwendet folgende Firestore-Struktur:
+JF-Coach legt den gesamten geteilten Zustand eines Teams in **einem einzigen
+Firestore-Dokument** ab:
 
 ```
-teams/{teamId}/                    # Team-Stammdaten
-teams/{teamId}/members/{id}        # Mitglieder
-teams/{teamId}/lineups/{id}        # Aufstellungsvorlagen
-teams/{teamId}/runs/{id}           # Trainingsläufe
-teams/{teamId}/knowledge/{id}      # Teaminterne Wissenseinträge (optional)
+teams/{teamId}/state/shared
 ```
+
+Dieses Dokument enthält die Felder `members`, `lineups`, `trainingLog` und
+`stopwatchDraft`. Die Sicherheitsregeln aus Schritt 5 erlauben den Zugriff
+genau auf diesen Pfad — alle anderen Pfade sind gesperrt.
 
 ---
 

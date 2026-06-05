@@ -12,7 +12,7 @@ sie einmalig mit einem kostenlosen Datenspeicher.
 
 ## Was du brauchst
 
-- Die JF-Coach-Webadresse (vom Betreiber bereitgestellt, z. B. `https://open-jf-coach.netlify.app/`)
+- Die JF-Coach-Webadresse (vom Betreiber bereitgestellt, z. B. `https://app.open-jf-coach.de/`)
 - Ein kostenloses [Supabase](https://supabase.com)-Konto
 
 Das war's. Die Einrichtung machst du **einmal pro Jugendfeuerwehr**.

@@ -16,7 +16,7 @@ Mobile-first PWA für Aufstellung, Stoppuhr, Analyse und Wissensdatenbank im Jug
 ## Tech-Stack
 
 - [React](https://react.dev/) + [Vite](https://vitejs.dev/)
-- Backend wahlweise [Supabase](https://supabase.com/) oder [Firebase](https://firebase.google.com/) (Firestore + Auth)
+- Backend wahlweise [Supabase](https://supabase.com/) (Postgres + Realtime) oder [Firebase](https://firebase.google.com/) (Firestore + Auth)
 - [Workbox](https://developer.chrome.com/docs/workbox/) (PWA / Offline-Support)
 - [lucide-react](https://lucide.dev/) (Icons)
 
@@ -68,7 +68,7 @@ Die App ist dann unter `http://localhost:5173` erreichbar.
 
 ## Datenschutz (DSGVO)
 
-Jede Jugendfeuerwehr, die diese App betreibt, ist selbst verantwortlich für die Verarbeitung personenbezogener Daten ihrer Mitglieder gemäß DSGVO. Wir empfehlen, Firebase in einer EU-Region (z.B. `europe-west3` / Frankfurt) zu betreiben.
+Jede Jugendfeuerwehr, die diese App betreibt, ist selbst verantwortlich für die Verarbeitung personenbezogener Daten ihrer Mitglieder gemäß DSGVO. Wir empfehlen, das Backend in einer EU-Region zu betreiben (Firebase: `europe-west3` / Frankfurt, Supabase: Central EU / Frankfurt).
 
 ## Mitmachen
 
