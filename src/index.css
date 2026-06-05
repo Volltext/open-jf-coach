@@ -1446,6 +1446,21 @@ button:active {
     grid-column: 1 / -1;
   }
 
+  /* Analyse: Tagebuch mehrspaltig, Positions-Matrix nutzt die volle Breite. */
+  .tab-screen.analysis-screen {
+    max-width: 64rem;
+  }
+
+  .analysis-screen .history-stack {
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    align-items: start;
+  }
+
+  .analysis-screen .history-stack > .stats-summary-card,
+  .analysis-screen .history-stack > .empty-copy {
+    grid-column: 1 / -1;
+  }
+
   .bottom-navigation {
     left: 50%;
     right: auto;
