@@ -1418,7 +1418,7 @@ button:active {
 
 @media (min-width: 700px) {
   .mockup-app-shell {
-    max-width: 60rem;
+    max-width: 66rem;
   }
 
   .app-main {
@@ -1430,6 +1430,20 @@ button:active {
     grid-column: 1 / -1;
     max-width: 48rem;
     margin: 0 auto;
+  }
+
+  /* Wissensdatenbank: breitere Fläche und mehrspaltige Karten am PC nutzen. */
+  .tab-screen.knowledge-screen {
+    max-width: 64rem;
+  }
+
+  .knowledge-screen .knowledge-stack {
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    align-items: start;
+  }
+
+  .knowledge-screen .knowledge-stack > .segmented-bar {
+    grid-column: 1 / -1;
   }
 
   .bottom-navigation {

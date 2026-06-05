@@ -1767,7 +1767,7 @@ function App({ isDemo = false }) {
         )}
 
         {activeTab === 'knowledge' && (
-          <section className="tab-screen">
+          <section className="tab-screen knowledge-screen">
             <div className="section-head">
               <h2>Wissensdatenbank</h2>
             </div>
