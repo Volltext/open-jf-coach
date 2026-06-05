@@ -201,6 +201,12 @@ textarea:focus {
   margin: 0;
 }
 
+/* Tab-Überschriften überall in identischer Größe und Höhe rendern. */
+.section-head h2 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
 .surface-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1603,10 +1609,25 @@ textarea:focus-visible {
   gap: 0.5rem;
 }
 
-/* Platz für den schwebenden Knopf reservieren, damit die Tab-Überschriften und
-   ihre rechtsbündigen Bedienelemente nicht darunter verschwinden. */
+/* Platz für die schwebende Topbar (Sync-Punkt + Einstellungen) reservieren, damit
+   die Tab-Überschriften und ihre rechtsbündigen Bedienelemente nicht darunter
+   liegen bzw. mit dem Sync-Punkt überlappen. */
 .section-head {
-  padding-right: 3rem;
+  /* Einheitliche Kopfhöhe über alle Tabs hinweg – unabhängig davon, ob rechts
+     ein Bedienelement steht (Personen, A/B-Umschalter) oder nicht. So sitzt die
+     Überschrift immer auf gleicher Höhe und das Kopffeld ist überall gleich groß. */
+  min-height: 2.75rem;
+  padding-right: 3.75rem;
+}
+
+/* Bedienelemente im Tab-Kopf auf die einheitliche Kopfhöhe begrenzen, damit der
+   A/B-Umschalter den Kopf nicht höher macht als bei den übrigen Tabs. */
+.section-head .segmented-compact {
+  padding: 0.25rem;
+}
+
+.section-head .segmented-compact button {
+  padding: 0.45rem 0.75rem;
 }
 
 .settings-gear {
