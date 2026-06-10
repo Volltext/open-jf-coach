@@ -20,7 +20,18 @@ für die Leistungsspange, den Bundeswettbewerb und den alltäglichen Dienst.
 
 <br/>
 
-<img src="docs/assets/mockup-stoppuhr.svg" alt="open-JF-Coach – Stoppuhr-Ansicht auf dem Smartphone" width="280" />
+<table>
+<tr>
+<td align="center">
+<img src="docs/assets/mockup-stoppuhr.svg" alt="open-JF-Coach – Stoppuhr-Ansicht" width="240" /><br/>
+<sub><b>Stoppuhr</b> &middot; Zeitmessung &amp; Zwischenzeiten</sub>
+</td>
+<td align="center">
+<img src="docs/assets/mockup-aufstellung.svg" alt="open-JF-Coach – Aufstellungs-Ansicht" width="240" /><br/>
+<sub><b>Aufstellung</b> &middot; Rollen für A- und B-Teil</sub>
+</td>
+</tr>
+</table>
 
 </div>
 
