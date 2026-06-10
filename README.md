@@ -18,6 +18,10 @@ für die Leistungsspange, den Bundeswettbewerb und den alltäglichen Dienst.
 
 `Open Source` &middot; `Kostenlos` &middot; `Datenschutzfreundlich`
 
+<br/>
+
+<img src="docs/assets/mockup-stoppuhr.svg" alt="open-JF-Coach – Stoppuhr-Ansicht auf dem Smartphone" width="280" />
+
 </div>
 
 ---
