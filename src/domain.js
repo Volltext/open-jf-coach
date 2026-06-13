@@ -84,7 +84,6 @@ export function createEmptyStopwatchDraft(mode = 'a') {
     mode,
     stopwatchVersion: 0,
     controllerId: null,
-    lastWriterId: null,
     isRunning: false,
     startTimestamp: null,
     elapsedMs: 0,
@@ -96,5 +95,14 @@ export function createEmptyStopwatchDraft(mode = 'a') {
     scoringEnabled: false,
     targetSeconds: null,
     fehlerCounts: {}
+  };
+}
+
+// A- und B-Teil laufen als zwei unabhängige Stoppuhren parallel in derselben
+// Instanz: ein Team kann den A-Teil messen, ein anderes gleichzeitig den B-Teil.
+export function createEmptyStopwatchDrafts() {
+  return {
+    a: createEmptyStopwatchDraft('a'),
+    b: createEmptyStopwatchDraft('b')
   };
 }

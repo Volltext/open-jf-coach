@@ -378,6 +378,44 @@ textarea:focus {
   color: var(--text-warning);
 }
 
+/* Kleiner pulsierender Punkt: signalisiert einen laufenden A-/B-Lauf. */
+.running-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--success);
+  display: inline-block;
+  flex: none;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  animation: running-pulse 1.6s ease-out infinite;
+}
+
+@keyframes running-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { box-shadow: 0 0 0 0.4rem rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Hinweis, dass der jeweils andere Lauf parallel mitläuft – tippbar zum Wechsel. */
+.parallel-run-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.parallel-run-hint strong {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
 .position-list,
 .template-stack,
 .history-stack,

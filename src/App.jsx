@@ -154,6 +154,9 @@ function App({ isDemo = false }) {
   const [appState, setAppState] = useState(() => createDefaultState());
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('stopwatch');
+  // Welcher der beiden parallelen Läufe (A/B) auf DIESEM Gerät bedient wird.
+  // Rein lokal – wird nicht synchronisiert, jedes Gerät wählt frei.
+  const [activeStopwatchMode, setActiveStopwatchMode] = useState('a');
   const [lineupTab, setLineupTab] = useState('A');
   const [analysisView, setAnalysisView] = useState('history');
   const [knowledgeView, setKnowledgeView] = useState('positions');
@@ -257,16 +260,17 @@ function App({ isDemo = false }) {
 
     const pushNow = () => {
       lastCloudPushAtRef.current = Date.now();
-      cloudRef.current?.pushState(extractSyncStateFromApp(appState, deviceIdRef.current));
+      cloudRef.current?.pushState(extractSyncStateFromApp(appState));
     };
 
     // Während eines laufenden Laufs Pushes auf max. ~3/s drosseln, damit schnelles
     // Fehler-Tippen mehrerer Betreuer das Backend nicht flutet. Der jeweils letzte
     // Stand wird über einen nachlaufenden Push garantiert übertragen – sonst ginge
     // z. B. der zuletzt erfasste Fehler verloren und fehlte im gespeicherten Lauf.
+    const anyRunning = appState.stopwatchDrafts.a.isRunning || appState.stopwatchDrafts.b.isRunning;
     const nowTs = Date.now();
     const sinceLastPush = nowTs - lastCloudPushAtRef.current;
-    if (appState.stopwatchDraft.isRunning && sinceLastPush < 350) {
+    if (anyRunning && sinceLastPush < 350) {
       if (trailingPushRef.current) {
         window.clearTimeout(trailingPushRef.current);
       }
@@ -295,37 +299,32 @@ function App({ isDemo = false }) {
         cloudReadyRef.current = true;
       },
       onRemoteState: (remoteData) => {
-        suppressNextCloudPushRef.current = true;
-
-        const remoteStopwatch = remoteData?.stopwatchDraft;
-        // Our own echo carries our authoritative startTimestamp (same clock) — re-anchoring
-        // it would drift the running timer. Only re-anchor snapshots written by another
-        // device. We key off the writer (not the controller), so a peer recording a Fehler
-        // mid-run no longer makes the timekeeper's clock jump.
-        const isOwnEcho = Boolean(remoteStopwatch?.lastWriterId)
-          && remoteStopwatch.lastWriterId === deviceIdRef.current;
-        const patchedRemoteData = (remoteStopwatch && remoteStopwatch.isRunning
-          && typeof remoteStopwatch.elapsedMs === 'number' && !isOwnEcho)
-          ? {
-              ...remoteData,
-              stopwatchDraft: {
-                ...remoteStopwatch,
-                // Re-anchor on each other client to avoid cross-device clock skew.
-                startTimestamp: Date.now() - remoteStopwatch.elapsedMs
-              }
-            }
-          : remoteData;
+        // Ein neu übernommener Draft stammt (dank `>`-Regel) immer von einem anderen
+        // Gerät – sein startTimestamp gehört zu dessen Uhr. Über die mitgelieferte
+        // elapsedMs (uhr-unabhängig) verankern wir auf unsere eigene Uhr, damit es
+        // keinen Sprung durch Uhren-Versatz gibt. A- und B-Lauf laufen unabhängig.
+        const reanchor = (draft) => {
+          if (draft.isRunning && typeof draft.elapsedMs === 'number') {
+            return { ...draft, startTimestamp: Date.now() - draft.elapsedMs };
+          }
+          return draft;
+        };
 
         setAppState((currentState) => {
-          const merged = mergeRemoteStateIntoApp(currentState, patchedRemoteData);
+          const merged = mergeRemoteStateIntoApp(currentState, remoteData, reanchor);
           if (
             merged.members === currentState.members
             && merged.lineups === currentState.lineups
             && merged.trainingLog === currentState.trainingLog
-            && merged.stopwatchDraft === currentState.stopwatchDraft
+            && merged.stopwatchDrafts.a === currentState.stopwatchDrafts.a
+            && merged.stopwatchDrafts.b === currentState.stopwatchDrafts.b
           ) {
+            // Nichts Neues übernommen → keinen ausgehenden Push unterdrücken,
+            // sonst bliebe das Flag hängen und verschluckte die nächste lokale Änderung.
             return currentState;
           }
+          // Wir übernehmen Remote-Daten → den dadurch ausgelösten Echo-Push unterdrücken.
+          suppressNextCloudPushRef.current = true;
           return merged;
         });
       },
@@ -342,8 +341,10 @@ function App({ isDemo = false }) {
     };
   }, [isLoaded]);
 
+  const anyTimerRunning = appState.stopwatchDrafts.a.isRunning || appState.stopwatchDrafts.b.isRunning;
+
   useEffect(() => {
-    if (!appState.stopwatchDraft.isRunning) {
+    if (!anyTimerRunning) {
       return undefined;
     }
 
@@ -354,10 +355,10 @@ function App({ isDemo = false }) {
     return () => {
       window.clearInterval(timerId);
     };
-  }, [appState.stopwatchDraft.isRunning]);
+  }, [anyTimerRunning]);
 
   useEffect(() => {
-    if (!appState.stopwatchDraft.isRunning || !navigator.wakeLock) {
+    if (!anyTimerRunning || !navigator.wakeLock) {
       return undefined;
     }
 
@@ -379,17 +380,19 @@ function App({ isDemo = false }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       wakeLock?.release();
     };
-  }, [appState.stopwatchDraft.isRunning]);
+  }, [anyTimerRunning]);
 
+  // Beim Moduswechsel (oder geänderter Vorgabezeit des aktiven Laufs) das
+  // Eingabefeld auf den jeweils aktiven Draft nachziehen.
   useEffect(() => {
-    const target = appState.stopwatchDraft.targetSeconds;
+    const target = appState.stopwatchDrafts[activeStopwatchMode].targetSeconds;
     setTargetInput((current) => {
       if (parseTargetToSeconds(current) === target) {
         return current;
       }
       return target === null ? '' : formatSecondsToInput(target);
     });
-  }, [appState.stopwatchDraft.targetSeconds]);
+  }, [appState.stopwatchDrafts, activeStopwatchMode]);
 
   // Transiente Zustände (syncing/connecting) entprellen, damit der Indikator beim
   // Timer-Start o. Ä. nicht ständig kurz auf Orange flackert. Stabile Zustände
@@ -427,10 +430,15 @@ function App({ isDemo = false }) {
 
   const currentPositions = lineupTab === 'A' ? A_PART_POSITIONS : B_PART_POSITIONS;
   const selectedPosition = currentPositions.find((position) => position.id === selectedPositionId) ?? null;
-  const stopwatchDraft = appState.stopwatchDraft;
+  const stopwatchDraft = appState.stopwatchDrafts[activeStopwatchMode];
+  const otherStopwatchMode = activeStopwatchMode === 'a' ? 'b' : 'a';
+  const otherStopwatchDraft = appState.stopwatchDrafts[otherStopwatchMode];
   const elapsedMs = stopwatchDraft.isRunning && stopwatchDraft.startTimestamp
     ? Math.max(0, now - stopwatchDraft.startTimestamp)
     : stopwatchDraft.elapsedMs;
+  const otherElapsedMs = otherStopwatchDraft.isRunning && otherStopwatchDraft.startTimestamp
+    ? Math.max(0, now - otherStopwatchDraft.startTimestamp)
+    : otherStopwatchDraft.elapsedMs;
   const isTimerControlledByOther = stopwatchDraft.isRunning
     && Boolean(stopwatchDraft.controllerId)
     && stopwatchDraft.controllerId !== deviceIdRef.current;
@@ -667,11 +675,25 @@ function App({ isDemo = false }) {
     updateAssignments(() => ({ ...buildEmptyAssignments(), ...template.assignments }));
   }
 
+  // Bearbeitet immer den auf DIESEM Gerät aktiven Lauf (A oder B). Jede inhaltliche
+  // Änderung erhöht die stopwatchVersion (in den Updatern), wodurch andere Geräte
+  // den Stand übernehmen und die laufende Zeit am eigenen Takt neu verankern.
   function updateStopwatchDraft(updater) {
-    updateState((currentState) => ({
-      ...currentState,
-      stopwatchDraft: updater(currentState.stopwatchDraft)
-    }));
+    updateState((currentState) => {
+      const mode = activeStopwatchMode;
+      const current = currentState.stopwatchDrafts[mode];
+      const next = updater(current);
+      if (next === current) {
+        return currentState;
+      }
+      return {
+        ...currentState,
+        stopwatchDrafts: {
+          ...currentState.stopwatchDrafts,
+          [mode]: { ...next, mode }
+        }
+      };
+    });
   }
 
   function stopMainTimer() {
@@ -744,16 +766,16 @@ function App({ isDemo = false }) {
     setShowResetConfirm(false);
   }
 
-  function setTimerMode(mode) {
-    if (stopwatchDraft.isRunning || isTimerControlledByOther) {
+  // Wechselt nur die lokale Ansicht zwischen dem A- und B-Lauf. Beide laufen
+  // unabhängig weiter – es wird nichts zurückgesetzt und nichts synchronisiert.
+  function switchStopwatchMode(mode) {
+    if (mode === activeStopwatchMode) {
       return;
     }
-    updateStopwatchDraft((currentDraft) => ({
-      ...createEmptyStopwatchDraft(mode),
-      scoringEnabled: currentDraft.scoringEnabled,
-      stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1
-    }));
+    setActiveStopwatchMode(mode);
     setShowResetConfirm(false);
+    setFehlerSearch('');
+    setExpandedFehlerGroup(null);
   }
 
   function addSplit(label) {
@@ -915,34 +937,41 @@ function App({ isDemo = false }) {
 
     const memberNames = Object.fromEntries(appState.members.map((member) => [member.id, member.name]));
     const scoring = stopwatchDraft.scoringEnabled ? { ...score, fehler: resolvedFehler } : null;
+    const mode = activeStopwatchMode;
 
-    updateState((currentState) => ({
-      ...currentState,
-      trainingLog: [
-        {
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          mode: currentState.stopwatchDraft.mode,
-          totalMs: elapsedMs,
-          markers: currentState.stopwatchDraft.markers,
-          knotDurationMs: currentState.stopwatchDraft.knotDurationMs,
-          taskTimers: currentState.stopwatchDraft.taskTimers ?? {},
-          notes: currentState.stopwatchDraft.notes,
-          scoring,
-          lineupSnapshot: {
-            assignments: { ...currentState.lineups.assignments },
-            memberNames
+    updateState((currentState) => {
+      const savedDraft = currentState.stopwatchDrafts[mode];
+      return {
+        ...currentState,
+        trainingLog: [
+          {
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            mode: savedDraft.mode,
+            totalMs: elapsedMs,
+            markers: savedDraft.markers,
+            knotDurationMs: savedDraft.knotDurationMs,
+            taskTimers: savedDraft.taskTimers ?? {},
+            notes: savedDraft.notes,
+            scoring,
+            lineupSnapshot: {
+              assignments: { ...currentState.lineups.assignments },
+              memberNames
+            }
+          },
+          ...currentState.trainingLog
+        ],
+        stopwatchDrafts: {
+          ...currentState.stopwatchDrafts,
+          [mode]: {
+            ...createEmptyStopwatchDraft(mode),
+            scoringEnabled: savedDraft.scoringEnabled,
+            targetSeconds: savedDraft.targetSeconds,
+            stopwatchVersion: (savedDraft.stopwatchVersion ?? 0) + 1
           }
-        },
-        ...currentState.trainingLog
-      ],
-      stopwatchDraft: {
-        ...createEmptyStopwatchDraft(currentState.stopwatchDraft.mode),
-        scoringEnabled: currentState.stopwatchDraft.scoringEnabled,
-        targetSeconds: currentState.stopwatchDraft.targetSeconds,
-        stopwatchVersion: (currentState.stopwatchDraft.stopwatchVersion ?? 0) + 1
-      }
-    }));
+        }
+      };
+    });
 
     showToast('Lauf gespeichert ✓');
   }
@@ -1276,11 +1305,23 @@ function App({ isDemo = false }) {
             <div className="section-head">
               <h2>Stoppuhr</h2>
               <div className="segmented-compact">
-                <button type="button" className={stopwatchDraft.mode === 'a' ? 'active' : ''} onClick={() => setTimerMode('a')}>
-                  A
+                <button
+                  type="button"
+                  className={activeStopwatchMode === 'a' ? 'active' : ''}
+                  onClick={() => switchStopwatchMode('a')}
+                  aria-pressed={activeStopwatchMode === 'a'}
+                  aria-label={`A-Teil${appState.stopwatchDrafts.a.isRunning ? ' (läuft)' : ''}`}
+                >
+                  A{appState.stopwatchDrafts.a.isRunning && <span className="running-dot" aria-hidden="true" />}
                 </button>
-                <button type="button" className={stopwatchDraft.mode === 'b' ? 'active' : ''} onClick={() => setTimerMode('b')}>
-                  B
+                <button
+                  type="button"
+                  className={activeStopwatchMode === 'b' ? 'active' : ''}
+                  onClick={() => switchStopwatchMode('b')}
+                  aria-pressed={activeStopwatchMode === 'b'}
+                  aria-label={`B-Teil${appState.stopwatchDrafts.b.isRunning ? ' (läuft)' : ''}`}
+                >
+                  B{appState.stopwatchDrafts.b.isRunning && <span className="running-dot" aria-hidden="true" />}
                 </button>
               </div>
             </div>
@@ -1296,6 +1337,18 @@ function App({ isDemo = false }) {
                 </div>
               )}
             </article>
+
+            {otherStopwatchDraft.isRunning && (
+              <button
+                type="button"
+                className="parallel-run-hint"
+                onClick={() => switchStopwatchMode(otherStopwatchMode)}
+              >
+                <span className="running-dot" aria-hidden="true" />
+                {otherStopwatchMode === 'a' ? 'A-Teil' : 'B-Teil'} läuft parallel
+                <strong>{formatDuration(otherElapsedMs)}</strong>
+              </button>
+            )}
 
             <div className="timer-actions-grid">
               <button

@@ -17,37 +17,69 @@ function isMeaningfulObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function extractSyncStateFromApp(appState, lastWriterId = null) {
-  const draft = appState.stopwatchDraft;
-  // While running, draft.elapsedMs stays frozen at the start value; serialize the
-  // live elapsed time so other clients (and our own echo) re-anchor correctly.
-  // `lastWriterId` stamps which device produced this snapshot so the receiver can
-  // tell its own echo apart from a peer's edit and re-anchor the running timer to
-  // its own clock — independent of who happens to control (own) the stopwatch.
-  const liveDraft = draft?.isRunning && draft.startTimestamp
+// Serialisiert einen Draft fürs Backend. While running, draft.elapsedMs stays
+// frozen at the start value; we emit the live elapsed time (clock-independent) so
+// other clients re-anchor the running timer to their own clock.
+function serialiseDraft(draft) {
+  if (!isMeaningfulObject(draft)) {
+    return draft ?? null;
+  }
+  return draft.isRunning && draft.startTimestamp
     ? { ...draft, elapsedMs: Math.max(0, Date.now() - draft.startTimestamp) }
     : draft;
-  const stopwatchDraft = liveDraft ? { ...liveDraft, lastWriterId } : liveDraft;
+}
 
+export function extractSyncStateFromApp(appState) {
+  const drafts = appState.stopwatchDrafts ?? {};
   return {
     members: appState.members,
     lineups: appState.lineups,
     trainingLog: appState.trainingLog,
-    stopwatchDraft
+    stopwatchDrafts: {
+      a: serialiseDraft(drafts.a),
+      b: serialiseDraft(drafts.b)
+    }
   };
 }
 
-export function mergeRemoteStateIntoApp(currentState, remoteData) {
-  const remoteStopwatch = isMeaningfulObject(remoteData.stopwatchDraft) ? remoteData.stopwatchDraft : null;
-  const currentStopwatchVersion = typeof currentState.stopwatchDraft?.stopwatchVersion === 'number' ? currentState.stopwatchDraft.stopwatchVersion : 0;
-  const remoteStopwatchVersion = typeof remoteStopwatch?.stopwatchVersion === 'number' ? remoteStopwatch.stopwatchVersion : -1;
+// Liefert den eingehenden Draft eines Modus – berücksichtigt sowohl das neue
+// Paar `stopwatchDrafts` als auch den alten Einzel-`stopwatchDraft` (Modus-Feld).
+export function pickRemoteDraft(remoteData, mode) {
+  const pair = remoteData?.stopwatchDrafts;
+  if (isMeaningfulObject(pair) && isMeaningfulObject(pair[mode])) {
+    return pair[mode];
+  }
+  const legacy = remoteData?.stopwatchDraft;
+  if (isMeaningfulObject(legacy) && (legacy.mode === 'b' ? 'b' : 'a') === mode) {
+    return legacy;
+  }
+  return null;
+}
+
+// `reanchorDraft` darf einen frisch übernommenen, laufenden Draft auf die eigene
+// Uhr umrechnen (Date.now lebt in App.jsx, damit diese Funktion rein bleibt).
+//
+// Wir übernehmen einen Remote-Draft nur bei *echt höherer* Version (`>`): eigene
+// Echos und unveränderte Weiterleitungen des anderen Laufs tragen dieselbe Version
+// und werden ignoriert – so springt eine laufende Zeitnahme nicht und ruckelt nicht.
+export function mergeRemoteStateIntoApp(currentState, remoteData, reanchorDraft = (draft) => draft) {
+  const mergeDraft = (mode) => {
+    const remoteDraft = pickRemoteDraft(remoteData, mode);
+    const currentDraft = currentState.stopwatchDrafts[mode];
+    const currentVersion = typeof currentDraft?.stopwatchVersion === 'number' ? currentDraft.stopwatchVersion : 0;
+    const remoteVersion = typeof remoteDraft?.stopwatchVersion === 'number' ? remoteDraft.stopwatchVersion : -1;
+    return remoteDraft && remoteVersion > currentVersion ? reanchorDraft(remoteDraft) : currentDraft;
+  };
 
   return {
     ...currentState,
     members: isMeaningfulArray(remoteData.members) ? remoteData.members : currentState.members,
     lineups: isMeaningfulObject(remoteData.lineups) ? remoteData.lineups : currentState.lineups,
     trainingLog: isMeaningfulArray(remoteData.trainingLog) ? remoteData.trainingLog : currentState.trainingLog,
-    stopwatchDraft: remoteStopwatchVersion >= currentStopwatchVersion ? remoteStopwatch : currentState.stopwatchDraft
+    stopwatchDrafts: {
+      a: mergeDraft('a'),
+      b: mergeDraft('b')
+    }
   };
 }
 
