@@ -84,6 +84,7 @@ export function createEmptyStopwatchDraft(mode = 'a') {
     mode,
     stopwatchVersion: 0,
     controllerId: null,
+    lastWriterId: null,
     isRunning: false,
     startTimestamp: null,
     elapsedMs: 0,

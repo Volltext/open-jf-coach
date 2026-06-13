@@ -26,9 +26,12 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ### Changed
 - Sync-Banner blendet sich bei stabiler Verbindung automatisch aus
 - Barrierefreiheit verbessert (aria-Labels für Navigation, Timer, Wertung und Statusmeldungen)
+- Wettkampf-Wertung jetzt im Team: Fehlerpunkte, Wertung (an/aus) und Vorgabezeit können alle Betreuer gemeinsam erfassen, während die Zeitnahme weiterhin nur auf dem startenden Gerät bedient wird (entspricht mehreren Wertungsrichtern je Position)
 
 ### Fixed
 - Tippfehler „Trainingslaeufe" → „Trainingsläufe"
+- Laufende Zeitnahme sprang auf dem zeitnehmenden Gerät nicht mehr, wenn ein anderer Betreuer einen Fehler erfasst (Neuverankerung jetzt anhand des schreibenden Geräts statt der Timer-Steuerung)
+- Zuletzt erfasster Fehler ging während eines laufenden Laufs nicht mehr verloren (nachlaufender Sync-Push garantiert die Übertragung des letzten Stands)
 
 ## [0.1.0] - 2026-05-23
 

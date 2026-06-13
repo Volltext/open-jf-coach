@@ -46,6 +46,7 @@ function normaliseStopwatchDraft(candidate) {
     mode: candidate.mode === 'b' ? 'b' : 'a',
     stopwatchVersion: typeof candidate.stopwatchVersion === 'number' ? candidate.stopwatchVersion : 0,
     controllerId: typeof candidate.controllerId === 'string' ? candidate.controllerId : null,
+    lastWriterId: typeof candidate.lastWriterId === 'string' ? candidate.lastWriterId : null,
     isRunning: Boolean(candidate.isRunning),
     startTimestamp: typeof candidate.startTimestamp === 'number' ? candidate.startTimestamp : null,
     elapsedMs: typeof candidate.elapsedMs === 'number' ? candidate.elapsedMs : 0,

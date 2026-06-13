@@ -17,13 +17,17 @@ function isMeaningfulObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function extractSyncStateFromApp(appState) {
+export function extractSyncStateFromApp(appState, lastWriterId = null) {
   const draft = appState.stopwatchDraft;
   // While running, draft.elapsedMs stays frozen at the start value; serialize the
   // live elapsed time so other clients (and our own echo) re-anchor correctly.
-  const stopwatchDraft = draft?.isRunning && draft.startTimestamp
+  // `lastWriterId` stamps which device produced this snapshot so the receiver can
+  // tell its own echo apart from a peer's edit and re-anchor the running timer to
+  // its own clock — independent of who happens to control (own) the stopwatch.
+  const liveDraft = draft?.isRunning && draft.startTimestamp
     ? { ...draft, elapsedMs: Math.max(0, Date.now() - draft.startTimestamp) }
     : draft;
+  const stopwatchDraft = liveDraft ? { ...liveDraft, lastWriterId } : liveDraft;
 
   return {
     members: appState.members,

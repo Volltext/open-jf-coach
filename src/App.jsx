@@ -213,6 +213,7 @@ function App({ isDemo = false }) {
   const cloudReadyRef = useRef(false);
   const suppressNextCloudPushRef = useRef(false);
   const lastCloudPushAtRef = useRef(0);
+  const trailingPushRef = useRef(null);
   const deviceIdRef = useRef(getOrCreateDeviceId());
 
   useEffect(() => {
@@ -254,14 +255,33 @@ function App({ isDemo = false }) {
       return;
     }
 
+    const pushNow = () => {
+      lastCloudPushAtRef.current = Date.now();
+      cloudRef.current?.pushState(extractSyncStateFromApp(appState, deviceIdRef.current));
+    };
+
+    // Während eines laufenden Laufs Pushes auf max. ~3/s drosseln, damit schnelles
+    // Fehler-Tippen mehrerer Betreuer das Backend nicht flutet. Der jeweils letzte
+    // Stand wird über einen nachlaufenden Push garantiert übertragen – sonst ginge
+    // z. B. der zuletzt erfasste Fehler verloren und fehlte im gespeicherten Lauf.
     const nowTs = Date.now();
-    if (appState.stopwatchDraft.isRunning && nowTs - lastCloudPushAtRef.current < 350) {
+    const sinceLastPush = nowTs - lastCloudPushAtRef.current;
+    if (appState.stopwatchDraft.isRunning && sinceLastPush < 350) {
+      if (trailingPushRef.current) {
+        window.clearTimeout(trailingPushRef.current);
+      }
+      trailingPushRef.current = window.setTimeout(() => {
+        trailingPushRef.current = null;
+        pushNow();
+      }, 350 - sinceLastPush);
       return;
     }
 
-    lastCloudPushAtRef.current = nowTs;
-
-    cloudRef.current.pushState(extractSyncStateFromApp(appState));
+    if (trailingPushRef.current) {
+      window.clearTimeout(trailingPushRef.current);
+      trailingPushRef.current = null;
+    }
+    pushNow();
   }, [appState, isLoaded]);
 
   useEffect(() => {
@@ -279,11 +299,13 @@ function App({ isDemo = false }) {
 
         const remoteStopwatch = remoteData?.stopwatchDraft;
         // Our own echo carries our authoritative startTimestamp (same clock) — re-anchoring
-        // it would reset the running timer. Only re-anchor timers driven by other devices.
-        const controlledByThisDevice = Boolean(remoteStopwatch?.controllerId)
-          && remoteStopwatch.controllerId === deviceIdRef.current;
+        // it would drift the running timer. Only re-anchor snapshots written by another
+        // device. We key off the writer (not the controller), so a peer recording a Fehler
+        // mid-run no longer makes the timekeeper's clock jump.
+        const isOwnEcho = Boolean(remoteStopwatch?.lastWriterId)
+          && remoteStopwatch.lastWriterId === deviceIdRef.current;
         const patchedRemoteData = (remoteStopwatch && remoteStopwatch.isRunning
-          && typeof remoteStopwatch.elapsedMs === 'number' && !controlledByThisDevice)
+          && typeof remoteStopwatch.elapsedMs === 'number' && !isOwnEcho)
           ? {
               ...remoteData,
               stopwatchDraft: {
@@ -384,6 +406,9 @@ function App({ isDemo = false }) {
   useEffect(() => () => {
     if (toastTimeoutRef.current) {
       window.clearTimeout(toastTimeoutRef.current);
+    }
+    if (trailingPushRef.current) {
+      window.clearTimeout(trailingPushRef.current);
     }
   }, []);
 
@@ -823,10 +848,10 @@ function App({ isDemo = false }) {
     });
   }
 
+  // Wertung an/aus ist eine gemeinsame Einstellung des Laufs und darf – wie die
+  // Fehlererfassung – von jedem Betreuer umgeschaltet werden, auch wenn die
+  // Zeitnahme auf einem anderen Gerät läuft. (Bestehende Fehler bleiben erhalten.)
   function toggleScoring() {
-    if (isTimerControlledByOther) {
-      return;
-    }
     updateStopwatchDraft((currentDraft) => ({
       ...currentDraft,
       stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
@@ -837,9 +862,6 @@ function App({ isDemo = false }) {
   function handleTargetInput(raw) {
     const masked = maskTimeInput(raw);
     setTargetInput(masked);
-    if (isTimerControlledByOther) {
-      return;
-    }
     const seconds = parseTargetToSeconds(masked);
     updateStopwatchDraft((currentDraft) => ({
       ...currentDraft,
@@ -848,10 +870,10 @@ function App({ isDemo = false }) {
     }));
   }
 
+  // Fehlerpunkte erfassen jeder Betreuer mit – im Wettbewerb beobachten mehrere
+  // Wertungsrichter unterschiedliche Positionen. Deshalb bewusst NICHT an das
+  // zeitnehmende Gerät gebunden; die Zeitnahme selbst bleibt dort.
   function addFehler(errorId) {
-    if (isTimerControlledByOther) {
-      return;
-    }
     updateStopwatchDraft((currentDraft) => ({
       ...currentDraft,
       stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
@@ -863,9 +885,6 @@ function App({ isDemo = false }) {
   }
 
   function removeFehler(errorId) {
-    if (isTimerControlledByOther) {
-      return;
-    }
     updateStopwatchDraft((currentDraft) => {
       const current = currentDraft.fehlerCounts?.[errorId] ?? 0;
       if (current <= 0) {
@@ -1303,7 +1322,10 @@ function App({ isDemo = false }) {
             </div>
 
             {isTimerControlledByOther && (
-              <div className="info-banner warning">Timer wird auf einem anderen Gerät gesteuert.</div>
+              <div className="info-banner warning">
+                Zeitnahme läuft auf einem anderen Gerät – Start/Stopp &amp; Zwischenzeiten dort.
+                Fehlerpunkte und Wertung kannst du hier mit erfassen.
+              </div>
             )}
 
             <article className="surface-card stacked-card">
@@ -1429,7 +1451,6 @@ function App({ isDemo = false }) {
                   type="button"
                   className={`scoring-switch ${stopwatchDraft.scoringEnabled ? 'on' : ''}`}
                   onClick={toggleScoring}
-                  disabled={isTimerControlledByOther}
                   aria-pressed={stopwatchDraft.scoringEnabled}
                 >
                   <span className="scoring-switch-knob" />
@@ -1462,7 +1483,6 @@ function App({ isDemo = false }) {
                       placeholder="z. B. 230 → 2:30"
                       value={targetInput}
                       onChange={(event) => handleTargetInput(event.target.value)}
-                      disabled={isTimerControlledByOther}
                       aria-label={`${stopwatchDraft.mode === 'a' ? 'Vorgabezeit' : 'Soll-Zeit'} in Minuten und Sekunden, nur Ziffern eingeben`}
                     />
                   </label>
@@ -1477,7 +1497,6 @@ function App({ isDemo = false }) {
                           type="button"
                           className={`quick-fehler ${count > 0 ? 'active' : ''}`}
                           onClick={() => addFehler(entry.id)}
-                          disabled={isTimerControlledByOther}
                         >
                           {count > 0 && <span className="fehler-badge">{count}</span>}
                           <span className="quick-fehler-label">{entry.label}</span>
@@ -1521,17 +1540,16 @@ function App({ isDemo = false }) {
                                       type="button"
                                       className="fehler-row-main"
                                       onClick={() => addFehler(entry.id)}
-                                      disabled={isTimerControlledByOther}
                                     >
                                       <span>{entry.label}{entry.perCase ? ' · je Fall' : ''}</span>
                                       <em>{entry.points} P.</em>
                                     </button>
                                     <div className="fehler-stepper">
-                                      <button type="button" onClick={() => removeFehler(entry.id)} disabled={count === 0 || isTimerControlledByOther} aria-label="weniger">
+                                      <button type="button" onClick={() => removeFehler(entry.id)} disabled={count === 0} aria-label="weniger">
                                         <Minus size={14} />
                                       </button>
                                       <strong>{count}</strong>
-                                      <button type="button" onClick={() => addFehler(entry.id)} disabled={isTimerControlledByOther} aria-label="mehr">
+                                      <button type="button" onClick={() => addFehler(entry.id)} aria-label="mehr">
                                         <Plus size={14} />
                                       </button>
                                     </div>
@@ -1553,7 +1571,7 @@ function App({ isDemo = false }) {
                           <span>{entry.count > 1 ? `${entry.count}× ` : ''}{entry.label}</span>
                           <div className="recorded-right">
                             <strong>{entry.total} P.</strong>
-                            <button type="button" onClick={() => removeFehler(entry.id)} disabled={isTimerControlledByOther} aria-label="entfernen">
+                            <button type="button" onClick={() => removeFehler(entry.id)} aria-label="entfernen">
                               <Minus size={14} />
                             </button>
                           </div>
