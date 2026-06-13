@@ -316,6 +316,7 @@ function App({ isDemo = false }) {
             merged.members === currentState.members
             && merged.lineups === currentState.lineups
             && merged.trainingLog === currentState.trainingLog
+            && merged.deletedRuns === currentState.deletedRuns
             && merged.stopwatchDrafts.a === currentState.stopwatchDrafts.a
             && merged.stopwatchDrafts.b === currentState.stopwatchDrafts.b
           ) {
@@ -947,6 +948,7 @@ function App({ isDemo = false }) {
           {
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             mode: savedDraft.mode,
             totalMs: elapsedMs,
             markers: savedDraft.markers,
@@ -981,9 +983,12 @@ function App({ isDemo = false }) {
   }
 
   function deleteRun(runId) {
+    // Tombstone setzen, damit der gelöschte Lauf nicht von einem anderen Gerät,
+    // das ihn noch kennt, beim nächsten Sync wieder auftaucht.
     updateState((currentState) => ({
       ...currentState,
-      trainingLog: currentState.trainingLog.filter((run) => run.id !== runId)
+      trainingLog: currentState.trainingLog.filter((run) => run.id !== runId),
+      deletedRuns: { ...currentState.deletedRuns, [runId]: new Date().toISOString() }
     }));
     setExpandedRunId(null);
     setPendingDeleteRunId(null);
@@ -991,9 +996,11 @@ function App({ isDemo = false }) {
   }
 
   function updateRunNotes(runId, notes) {
+    // updatedAt mitschreiben, damit bei zeitgleichen Änderungen am selben Lauf
+    // auf verschiedenen Geräten der neuere Stand gewinnt.
     updateState((currentState) => ({
       ...currentState,
-      trainingLog: currentState.trainingLog.map((run) => run.id === runId ? { ...run, notes } : run)
+      trainingLog: currentState.trainingLog.map((run) => run.id === runId ? { ...run, notes, updatedAt: new Date().toISOString() } : run)
     }));
   }
 

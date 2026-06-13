@@ -35,10 +35,70 @@ export function extractSyncStateFromApp(appState) {
     members: appState.members,
     lineups: appState.lineups,
     trainingLog: appState.trainingLog,
+    deletedRuns: appState.deletedRuns ?? {},
     stopwatchDrafts: {
       a: serialiseDraft(drafts.a),
       b: serialiseDraft(drafts.b)
     }
+  };
+}
+
+function runTimestamp(run) {
+  return run?.updatedAt ?? run?.createdAt ?? '';
+}
+
+function sameRunRefs(a, b) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Führt zwei Trainingsprotokolle per Lauf-ID zusammen, statt eines komplett zu
+// überschreiben. So geht kein Lauf verloren, wenn zwei Geräte (z. B. A- und
+// B-Team) zeitgleich speichern. Konflikte am selben Lauf entscheidet der neuere
+// `updatedAt`-Stempel; gelöschte Läufe bleiben über Tombstones (`deletedRuns`)
+// gelöscht und tauchen nicht wieder auf.
+export function mergeTrainingLog(currentRuns, remoteRuns, currentTombstones, remoteTombstones) {
+  const tombstones = { ...currentTombstones, ...remoteTombstones };
+
+  const byId = new Map();
+  const consider = (run) => {
+    if (!run || !run.id) {
+      return;
+    }
+    const existing = byId.get(run.id);
+    // Aktuelle zuerst einlesen; Remote ersetzt nur bei *echt* neuerem Stempel →
+    // unveränderte Echos behalten die bestehende Referenz (kein unnötiges Rendern).
+    if (!existing || runTimestamp(run) > runTimestamp(existing)) {
+      byId.set(run.id, run);
+    }
+  };
+  currentRuns.forEach(consider);
+  remoteRuns.forEach(consider);
+
+  const merged = [...byId.values()]
+    .filter((run) => !tombstones[run.id])
+    .sort((a, b) => {
+      const ca = a.createdAt ?? '';
+      const cb = b.createdAt ?? '';
+      if (ca === cb) {
+        return 0;
+      }
+      return ca > cb ? -1 : 1;
+    });
+
+  const runsUnchanged = sameRunRefs(currentRuns, merged);
+  const tombstonesUnchanged = Object.keys(tombstones).length === Object.keys(currentTombstones).length;
+
+  return {
+    trainingLog: runsUnchanged ? currentRuns : merged,
+    deletedRuns: tombstonesUnchanged ? currentTombstones : tombstones
   };
 }
 
@@ -71,11 +131,21 @@ export function mergeRemoteStateIntoApp(currentState, remoteData, reanchorDraft 
     return remoteDraft && remoteVersion > currentVersion ? reanchorDraft(remoteDraft) : currentDraft;
   };
 
+  const remoteRuns = isMeaningfulArray(remoteData.trainingLog) ? remoteData.trainingLog : [];
+  const remoteTombstones = isMeaningfulObject(remoteData.deletedRuns) ? remoteData.deletedRuns : {};
+  const { trainingLog, deletedRuns } = mergeTrainingLog(
+    currentState.trainingLog,
+    remoteRuns,
+    currentState.deletedRuns ?? {},
+    remoteTombstones
+  );
+
   return {
     ...currentState,
     members: isMeaningfulArray(remoteData.members) ? remoteData.members : currentState.members,
     lineups: isMeaningfulObject(remoteData.lineups) ? remoteData.lineups : currentState.lineups,
-    trainingLog: isMeaningfulArray(remoteData.trainingLog) ? remoteData.trainingLog : currentState.trainingLog,
+    trainingLog,
+    deletedRuns,
     stopwatchDrafts: {
       a: mergeDraft('a'),
       b: mergeDraft('b')

@@ -14,6 +14,7 @@ export function createDefaultState() {
     },
     stopwatchDrafts: createEmptyStopwatchDrafts(),
     trainingLog: [],
+    deletedRuns: {},
     pocketArticles: [...POCKET_ARTICLES],
     preferences: {
       startScreen: 'stoppuhr'
@@ -94,6 +95,7 @@ export function normaliseState(candidate) {
     },
     stopwatchDrafts: normaliseStopwatchDrafts(candidate),
     trainingLog: Array.isArray(candidate.trainingLog) ? candidate.trainingLog : defaults.trainingLog,
+    deletedRuns: (candidate.deletedRuns && typeof candidate.deletedRuns === 'object' && !Array.isArray(candidate.deletedRuns)) ? candidate.deletedRuns : defaults.deletedRuns,
     pocketArticles: Array.isArray(candidate.pocketArticles) && candidate.pocketArticles.length > 0 ? candidate.pocketArticles : defaults.pocketArticles,
     preferences: {
       startScreen: candidate.preferences?.startScreen === 'aufstellung' ? 'aufstellung' : defaults.preferences.startScreen

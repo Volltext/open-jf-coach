@@ -33,6 +33,7 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 - Tippfehler „Trainingslaeufe" → „Trainingsläufe"
 - Laufende Zeitnahme sprang auf dem zeitnehmenden Gerät nicht mehr, wenn ein anderer Betreuer einen Fehler erfasst (Sync übernimmt einen Lauf nur bei echt neuer Version und verankert die laufende Zeit dann am eigenen Takt)
 - Zuletzt erfasster Fehler ging während eines laufenden Laufs nicht mehr verloren (nachlaufender Sync-Push garantiert die Übertragung des letzten Stands)
+- Trainingsprotokoll wird per Lauf-ID zusammengeführt statt komplett überschrieben: speichern zwei Geräte (z. B. A- und B-Team) zeitgleich, geht kein Lauf mehr verloren. Notiz-Änderungen entscheidet der neuere Zeitstempel; gelöschte Läufe bleiben über Tombstones gelöscht und tauchen nicht wieder auf
 
 ## [0.1.0] - 2026-05-23
 
