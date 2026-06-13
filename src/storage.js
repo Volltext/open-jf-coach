@@ -1,4 +1,4 @@
-import { ALL_POSITIONS, POCKET_ARTICLES, buildEmptyAssignments, createEmptyStopwatchDraft } from './domain';
+import { ALL_POSITIONS, POCKET_ARTICLES, buildEmptyAssignments, createEmptyStopwatchDraft, createEmptyStopwatchDrafts } from './domain';
 
 const DB_NAME = 'jf-trainings-tracker';
 const STORE_NAME = 'app';
@@ -12,8 +12,9 @@ export function createDefaultState() {
       assignments: buildEmptyAssignments(),
       templates: []
     },
-    stopwatchDraft: createEmptyStopwatchDraft('a'),
+    stopwatchDrafts: createEmptyStopwatchDrafts(),
     trainingLog: [],
+    deletedRuns: {},
     pocketArticles: [...POCKET_ARTICLES],
     preferences: {
       startScreen: 'stoppuhr'
@@ -60,6 +61,26 @@ function normaliseStopwatchDraft(candidate) {
   };
 }
 
+// Stellt das Paar { a, b } her. Migriert auch Altstände, die noch einen
+// einzelnen `stopwatchDraft` gespeichert haben – dieser landet in seinem Modus-Slot.
+function normaliseStopwatchDrafts(candidate) {
+  const source = candidate?.stopwatchDrafts;
+  const legacy = candidate?.stopwatchDraft;
+  const legacyMode = legacy && typeof legacy === 'object' && legacy.mode === 'b' ? 'b' : 'a';
+
+  const build = (mode) => {
+    let raw = null;
+    if (source && typeof source === 'object' && source[mode] && typeof source[mode] === 'object') {
+      raw = source[mode];
+    } else if (legacy && typeof legacy === 'object' && legacyMode === mode) {
+      raw = legacy;
+    }
+    return { ...normaliseStopwatchDraft(raw), mode };
+  };
+
+  return { a: build('a'), b: build('b') };
+}
+
 export function normaliseState(candidate) {
   const defaults = createDefaultState();
   if (!candidate || typeof candidate !== 'object') {
@@ -72,8 +93,9 @@ export function normaliseState(candidate) {
       assignments: mergeAssignments(candidate.lineups?.assignments),
       templates: Array.isArray(candidate.lineups?.templates) ? candidate.lineups.templates : defaults.lineups.templates
     },
-    stopwatchDraft: normaliseStopwatchDraft(candidate.stopwatchDraft),
+    stopwatchDrafts: normaliseStopwatchDrafts(candidate),
     trainingLog: Array.isArray(candidate.trainingLog) ? candidate.trainingLog : defaults.trainingLog,
+    deletedRuns: (candidate.deletedRuns && typeof candidate.deletedRuns === 'object' && !Array.isArray(candidate.deletedRuns)) ? candidate.deletedRuns : defaults.deletedRuns,
     pocketArticles: Array.isArray(candidate.pocketArticles) && candidate.pocketArticles.length > 0 ? candidate.pocketArticles : defaults.pocketArticles,
     preferences: {
       startScreen: candidate.preferences?.startScreen === 'aufstellung' ? 'aufstellung' : defaults.preferences.startScreen

@@ -7,6 +7,7 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Paralleler A- und B-Lauf in einer Instanz: ein Team misst den A-Teil, ein anderes gleichzeitig den B-Teil. Jedes Gerät wählt über den A/B-Umschalter lokal, welchen Lauf es bedient; ein „läuft"-Punkt und ein Parallel-Hinweis zeigen den jeweils anderen Lauf
 - Einfacher Einrichtungsweg über Supabase mit Assistent in der App (kein Build, kein Hosting nötig)
 - Austauschbares Backend: Supabase oder Firebase
 - Kameraden per Beitritts-Link und QR-Code einladen
@@ -26,9 +27,13 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ### Changed
 - Sync-Banner blendet sich bei stabiler Verbindung automatisch aus
 - Barrierefreiheit verbessert (aria-Labels für Navigation, Timer, Wertung und Statusmeldungen)
+- Wettkampf-Wertung jetzt im Team: Fehlerpunkte, Wertung (an/aus) und Vorgabezeit können alle Betreuer gemeinsam erfassen, während die Zeitnahme weiterhin nur auf dem startenden Gerät bedient wird (entspricht mehreren Wertungsrichtern je Position)
 
 ### Fixed
 - Tippfehler „Trainingslaeufe" → „Trainingsläufe"
+- Laufende Zeitnahme sprang auf dem zeitnehmenden Gerät nicht mehr, wenn ein anderer Betreuer einen Fehler erfasst (Sync übernimmt einen Lauf nur bei echt neuer Version und verankert die laufende Zeit dann am eigenen Takt)
+- Zuletzt erfasster Fehler ging während eines laufenden Laufs nicht mehr verloren (nachlaufender Sync-Push garantiert die Übertragung des letzten Stands)
+- Trainingsprotokoll wird per Lauf-ID zusammengeführt statt komplett überschrieben: speichern zwei Geräte (z. B. A- und B-Team) zeitgleich, geht kein Lauf mehr verloren. Notiz-Änderungen entscheidet der neuere Zeitstempel; gelöschte Läufe bleiben über Tombstones gelöscht und tauchen nicht wieder auf
 
 ## [0.1.0] - 2026-05-23
 
