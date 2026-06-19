@@ -1,0 +1,88 @@
+<svg width="300" height="640" viewBox="0 0 300 640" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, system-ui, 'Segoe UI', sans-serif">
+  <defs>
+    <clipPath id="screenC"><rect x="0" y="0" width="256" height="534" rx="44"/></clipPath>
+  </defs>
+
+  <text x="150" y="20" font-size="13" font-weight="800" fill="#0f172a" text-anchor="middle">C · iOS-Nativ (Hell)</text>
+  <text x="150" y="36" font-size="9" fill="#64748b" text-anchor="middle">helles Grau · weiße Karten · System-Farben · sehr aufgeräumt</text>
+
+  <g transform="translate(22,50)">
+    <rect x="0" y="0" width="256" height="534" rx="44" fill="#ffffff" stroke="#d1d1d6" stroke-width="1.5"/>
+    <g clip-path="url(#screenC)">
+      <!-- iOS grouped background -->
+      <rect x="0" y="0" width="256" height="534" fill="#f2f2f7"/>
+
+      <rect x="87" y="-2" width="82" height="24" rx="12" fill="#000000"/>
+      <text x="18" y="23" font-size="11" font-weight="700" fill="#1c1c1e" fill-opacity="0.9">9:41</text>
+      <rect x="226" y="11" width="16" height="9" rx="2" stroke="#1c1c1e" stroke-opacity="0.45" stroke-width="1"/>
+      <rect x="227.5" y="12.5" width="11" height="6" rx="1" fill="#1c1c1e" fill-opacity="0.8"/>
+
+      <circle cx="207" cy="52" r="3" fill="#34c759"/>
+      <g transform="translate(224.5,45.5) scale(0.55)" stroke="#8e8e93" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </g>
+
+      <!-- iOS large title -->
+      <text x="16" y="94" font-size="24" font-weight="800" letter-spacing="-0.6" fill="#1c1c1e">Stoppuhr</text>
+      <!-- iOS segmented control: gray track, white thumb -->
+      <rect x="178" y="78" width="64" height="24" rx="7" fill="#e3e3e8"/>
+      <rect x="180.5" y="80.5" width="29" height="19" rx="5.5" fill="#ffffff"/>
+      <text x="195" y="92.5" font-size="10" font-weight="700" fill="#1c1c1e" text-anchor="middle">A</text>
+      <text x="226" y="92.5" font-size="10" font-weight="500" fill="#8e8e93" text-anchor="middle">B</text>
+
+      <!-- timer card: white, soft, no harsh shadow -->
+      <rect x="14" y="112" width="228" height="114" rx="18" fill="#ffffff"/>
+      <text x="128" y="138" font-size="8" font-weight="600" letter-spacing="1" fill="#8e8e93" text-anchor="middle">A-TEIL LAUF</text>
+      <text x="128" y="180" font-size="38" font-weight="600" letter-spacing="-1" fill="#1c1c1e" text-anchor="middle" font-family="ui-monospace, 'SF Mono', monospace">02:34,7</text>
+      <line x1="28" y1="196" x2="228" y2="196" stroke="#e5e5ea"/>
+      <text x="28" y="214" font-size="9" fill="#8e8e93">Knotenzeit</text>
+      <text x="200" y="214" font-size="10" font-weight="600" fill="#1c1c1e" text-anchor="end" font-family="ui-monospace, monospace">00:28,3</text>
+      <circle cx="218" cy="210" r="2.5" fill="#ff9500"/>
+
+      <!-- START: iOS green filled, full rounded -->
+      <rect x="14" y="238" width="138" height="54" rx="14" fill="#34c759"/>
+      <text x="83" y="271" font-size="17" font-weight="700" letter-spacing="0.3" fill="#ffffff" text-anchor="middle">START</text>
+      <!-- secondary: iOS tinted (light fill, colored text) -->
+      <rect x="158" y="238" width="84" height="25" rx="9" fill="#ffffff"/>
+      <text x="200" y="254.5" font-size="9.5" font-weight="600" fill="#ff3b30" text-anchor="middle">Reset</text>
+      <rect x="158" y="267" width="84" height="25" rx="9" fill="#007aff"/>
+      <text x="200" y="283.5" font-size="9.5" font-weight="600" fill="#ffffff" text-anchor="middle">Speichern</text>
+
+      <!-- Zwischenzeiten: grouped list card -->
+      <text x="26" y="312" font-size="8.5" font-weight="600" letter-spacing="0.6" fill="#8e8e93">ZWISCHENZEITEN</text>
+      <rect x="14" y="318" width="228" height="96" rx="18" fill="#ffffff"/>
+      <rect x="24" y="328" width="100" height="38" rx="10" fill="#eef6ff"/>
+      <text x="74" y="351" font-size="9.5" font-weight="600" fill="#007aff" text-anchor="middle">zu Wasser</text>
+      <rect x="132" y="328" width="100" height="38" rx="10" fill="#eef6ff"/>
+      <text x="182" y="351" font-size="9.5" font-weight="600" fill="#007aff" text-anchor="middle">Knoten Start</text>
+      <line x1="24" y1="378" x2="232" y2="378" stroke="#e5e5ea"/>
+      <text x="26" y="396" font-size="9.5" font-weight="400" fill="#1c1c1e">zu Wasser</text>
+      <text x="222" y="396" font-size="10" font-weight="500" fill="#1c1c1e" text-anchor="end" font-family="ui-monospace, monospace">01:12,4</text>
+
+      <rect x="14" y="426" width="228" height="38" rx="18" fill="#ffffff"/>
+      <text x="28" y="449" font-size="10.5" font-weight="400" fill="#8e8e93">Notizen zum Lauf …</text>
+
+      <!-- iOS tab bar: light, blur, hairline -->
+      <rect x="0" y="470" width="256" height="64" fill="#f9f9fbe6"/>
+      <line x1="0" y1="470" x2="256" y2="470" stroke="#d1d1d6"/>
+
+      <g transform="translate(22.6,483) scale(0.72)" stroke="#8e8e93" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75"/>
+      </g>
+      <text x="32" y="512" font-size="7" font-weight="500" fill="#8e8e93" text-anchor="middle">Aufstellung</text>
+      <g transform="translate(86.6,483) scale(0.72)" stroke="#ff9500" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>
+      </g>
+      <text x="96" y="512" font-size="7" font-weight="700" fill="#ff9500" text-anchor="middle">Stoppuhr</text>
+      <g transform="translate(150.6,483) scale(0.72)" stroke="#8e8e93" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/>
+      </g>
+      <text x="160" y="512" font-size="7" font-weight="500" fill="#8e8e93" text-anchor="middle">Analyse</text>
+      <g transform="translate(214.6,483) scale(0.72)" stroke="#8e8e93" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </g>
+      <text x="224" y="512" font-size="7" font-weight="500" fill="#8e8e93" text-anchor="middle">Wissen</text>
+    </g>
+  </g>
+</svg>

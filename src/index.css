@@ -3,15 +3,15 @@
   font-family: system-ui, 'Segoe UI', 'Avenir Next', 'Trebuchet MS', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Roboto Mono', 'Courier New', monospace;
 
-  /* Radius-Skala */
-  --r-xs: 0.5rem;
-  --r-sm: 0.75rem;
-  --r-md: 1rem;
-  --r-lg: 1.25rem;
-  --r-xl: 1.5rem;
+  /* Radius-Skala – gestrafft für ein ruhigeres, präziseres Bild */
+  --r-xs: 0.375rem;
+  --r-sm: 0.5rem;
+  --r-md: 0.625rem;
+  --r-lg: 0.875rem;
+  --r-xl: 1.125rem;
   --r-pill: 999px;
 
-  /* Marken-Akzent (Orange) – in beiden Themes identisch */
+  /* Marken-Akzent (Orange) – sparsam als einziger Akzent eingesetzt */
   --accent-rgb: 249, 115, 22;
   --accent: rgb(var(--accent-rgb));
   --accent-strong: #ea580c;
@@ -23,18 +23,18 @@
   --success: #10b981;
   --blue: #2563eb;
 
-  /* Dunkles Theme (Standard) */
-  --bg: #0f172a;
-  --bg-strong: #020617;
-  --surface: #1e293b;
-  --surface-muted: #334155;
-  --inset: rgba(15, 23, 42, 0.55);
-  --border: rgba(148, 163, 184, 0.2);
-  --text: #f8fafc;
-  --muted: #94a3b8;
-  --shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
-  --app-bg: linear-gradient(180deg, #020617 0%, #0f172a 30%, #111827 100%);
-  --nav-bg: rgba(2, 6, 23, 0.96);
+  /* Dunkles Theme (Standard) – neutrales, flaches Mono-Design */
+  --bg: #09090b;
+  --bg-strong: #050506;
+  --surface: #111113;
+  --surface-muted: #1c1c1f;
+  --inset: rgba(255, 255, 255, 0.045);
+  --border: rgba(255, 255, 255, 0.09);
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  --shadow: none;
+  --app-bg: #09090b;
+  --nav-bg: rgba(9, 9, 11, 0.92);
 
   /* Status-Textfarben (auf zarten Tints) */
   --text-danger: #fca5a5;
@@ -46,17 +46,17 @@
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #eef2f7;
+  --bg: #fafafa;
   --bg-strong: #ffffff;
   --surface: #ffffff;
-  --surface-muted: #e8edf4;
-  --inset: rgba(15, 23, 42, 0.045);
-  --border: rgba(15, 23, 42, 0.14);
-  --text: #0f172a;
-  --muted: #51607a;
-  --shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
-  --app-bg: linear-gradient(180deg, #f8fafc 0%, #eef2f7 40%, #e6ecf4 100%);
-  --nav-bg: rgba(255, 255, 255, 0.96);
+  --surface-muted: #f4f4f5;
+  --inset: rgba(9, 9, 11, 0.04);
+  --border: #e4e4e7;
+  --text: #18181b;
+  --muted: #71717a;
+  --shadow: none;
+  --app-bg: #fafafa;
+  --nav-bg: rgba(255, 255, 255, 0.92);
 
   --text-danger: #b91c1c;
   --text-success: #047857;
@@ -543,12 +543,12 @@ textarea:focus {
   max-width: calc(100% - 2rem);
   padding: 0.75rem 1.1rem;
   border-radius: var(--r-md);
-  background: rgba(15, 23, 42, 0.96);
+  background: rgba(24, 24, 27, 0.97);
   border: 1px solid var(--border);
-  color: #f8fafc;
+  color: #fafafa;
   font-weight: 600;
   font-size: 0.9rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   animation: toast-in 0.2s ease;
 }
 
@@ -690,8 +690,9 @@ textarea:focus {
 .secondary-action {
   min-height: 2.85rem;
   border-radius: var(--r-md);
-  background: var(--surface-muted);
+  background: transparent;
   color: var(--text);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -701,6 +702,7 @@ textarea:focus {
 .secondary-action.save {
   background: var(--blue);
   color: #fff;
+  border-color: transparent;
 }
 
 .secondary-action:disabled {
@@ -1053,7 +1055,7 @@ textarea:focus {
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.75);
+  background: rgba(0, 0, 0, 0.6);
   display: grid;
   align-items: end;
   z-index: 40;
