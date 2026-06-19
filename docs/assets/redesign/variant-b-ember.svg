@@ -1,0 +1,91 @@
+<svg width="300" height="640" viewBox="0 0 300 640" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <clipPath id="screenB"><rect x="0" y="0" width="256" height="534" rx="44"/></clipPath>
+    <linearGradient id="emberStart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+
+  <text x="150" y="20" font-size="13" font-weight="800" fill="#0f172a" text-anchor="middle">B · Warm &amp; Sportlich</text>
+  <text x="150" y="36" font-size="9" fill="#64748b" text-anchor="middle">Feuerwehr-Identität · warmes Dunkel · kräftiger Akzent</text>
+
+  <g transform="translate(22,50)">
+    <rect x="0" y="0" width="256" height="534" rx="44" fill="#1a1411" stroke="#3a2c22" stroke-width="1.5"/>
+    <g clip-path="url(#screenB)">
+      <!-- warm near-black, flat (very subtle warmth, no blue) -->
+      <rect x="0" y="0" width="256" height="534" fill="#17120f"/>
+
+      <rect x="87" y="-2" width="82" height="24" rx="12" fill="#0d0a08"/>
+      <text x="18" y="23" font-size="11" font-weight="700" fill="#faf7f5" fill-opacity="0.85">9:41</text>
+      <rect x="226" y="11" width="16" height="9" rx="2" stroke="#faf7f5" stroke-opacity="0.4" stroke-width="1"/>
+      <rect x="227.5" y="12.5" width="11" height="6" rx="1" fill="#faf7f5" fill-opacity="0.75"/>
+
+      <circle cx="207" cy="52" r="3" fill="#4ade80"/>
+      <g transform="translate(224.5,45.5) scale(0.55)" stroke="#9c8579" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </g>
+
+      <!-- title with small accent kicker -->
+      <rect x="16" y="74" width="3" height="22" rx="1.5" fill="#f97316"/>
+      <text x="28" y="92" font-size="20" font-weight="800" letter-spacing="-0.5" fill="#faf7f5">Stoppuhr</text>
+      <rect x="178" y="76" width="64" height="24" rx="7" fill="#241b15" stroke="#3a2c22" stroke-width="1"/>
+      <rect x="181" y="79" width="29" height="18" rx="5" fill="url(#emberStart)"/>
+      <text x="195.5" y="91.5" font-size="10" font-weight="800" fill="#1a0f04" text-anchor="middle">A</text>
+      <text x="226" y="91.5" font-size="10" font-weight="600" fill="#7c6a5e" text-anchor="middle">B</text>
+
+      <!-- timer card: warm surface, accent top hairline -->
+      <rect x="14" y="110" width="228" height="112" rx="16" fill="#211a15" stroke="#3a2c22" stroke-width="1"/>
+      <rect x="14" y="110" width="228" height="3" rx="1.5" fill="#f97316" fill-opacity="0.9"/>
+      <text x="28" y="136" font-size="8" font-weight="700" letter-spacing="1.5" fill="#f97316">A-TEIL LAUF</text>
+      <text x="128" y="178" font-size="38" font-weight="700" letter-spacing="-1" fill="#faf7f5" text-anchor="middle" font-family="ui-monospace, 'SF Mono', monospace">02:34,7</text>
+      <line x1="28" y1="194" x2="228" y2="194" stroke="#3a2c22"/>
+      <text x="28" y="211" font-size="8.5" fill="#9c8579">Knotenzeit</text>
+      <text x="196" y="211" font-size="10" font-weight="700" fill="#faf7f5" text-anchor="end" font-family="ui-monospace, monospace">00:28,3</text>
+      <circle cx="216" cy="207.5" r="3" fill="#4ade80"/>
+
+      <!-- START: bold ember gradient, confident -->
+      <rect x="14" y="234" width="138" height="56" rx="14" fill="url(#emberStart)"/>
+      <text x="83" y="269" font-size="18" font-weight="800" letter-spacing="0.5" fill="#1a0f04" text-anchor="middle">START</text>
+      <rect x="158" y="234" width="84" height="26" rx="10" fill="#2e231c"/>
+      <text x="200" y="250.5" font-size="9.5" font-weight="700" fill="#e8ddd4" text-anchor="middle">Reset</text>
+      <rect x="158" y="264" width="84" height="26" rx="10" fill="#2e231c"/>
+      <text x="200" y="280.5" font-size="9.5" font-weight="700" fill="#e8ddd4" text-anchor="middle">Speichern</text>
+
+      <rect x="14" y="302" width="228" height="112" rx="16" fill="#211a15" stroke="#3a2c22" stroke-width="1"/>
+      <text x="28" y="324" font-size="11" font-weight="700" fill="#faf7f5">Zwischenzeiten</text>
+      <rect x="22" y="332" width="100" height="40" rx="11" fill="#2e231c"/>
+      <text x="72" y="356" font-size="9.5" font-weight="600" fill="#f0e6dd" text-anchor="middle">zu Wasser</text>
+      <rect x="134" y="332" width="100" height="40" rx="11" fill="#2e231c"/>
+      <text x="184" y="356" font-size="9.5" font-weight="600" fill="#f0e6dd" text-anchor="middle">Knoten Start</text>
+      <rect x="22" y="384" width="212" height="24" rx="9" fill="#17120f"/>
+      <text x="30" y="400" font-size="9.5" font-weight="500" fill="#cbbaad">zu Wasser</text>
+      <text x="220" y="400" font-size="10" font-weight="700" fill="#faf7f5" text-anchor="end" font-family="ui-monospace, monospace">01:12,4</text>
+
+      <rect x="14" y="426" width="228" height="38" rx="16" fill="#211a15" stroke="#3a2c22" stroke-width="1"/>
+      <text x="28" y="449" font-size="10.5" font-weight="600" fill="#9c8579">Notizen zum Lauf …</text>
+
+      <rect x="0" y="470" width="256" height="64" fill="#120e0c"/>
+      <line x1="0" y1="470" x2="256" y2="470" stroke="#3a2c22"/>
+      <rect x="83" y="473" width="26" height="3" rx="1.5" fill="#f97316"/>
+
+      <g transform="translate(22.6,484) scale(0.74)" stroke="#9c8579" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75"/>
+      </g>
+      <text x="32" y="513" font-size="7" font-weight="600" fill="#9c8579" text-anchor="middle">Aufstellung</text>
+      <g transform="translate(86.6,484) scale(0.74)" stroke="#f97316" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>
+      </g>
+      <text x="96" y="513" font-size="7" font-weight="800" fill="#f97316" text-anchor="middle">Stoppuhr</text>
+      <g transform="translate(150.6,484) scale(0.74)" stroke="#9c8579" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/>
+      </g>
+      <text x="160" y="513" font-size="7" font-weight="600" fill="#9c8579" text-anchor="middle">Analyse</text>
+      <g transform="translate(214.6,484) scale(0.74)" stroke="#9c8579" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </g>
+      <text x="224" y="513" font-size="7" font-weight="600" fill="#9c8579" text-anchor="middle">Wissen</text>
+    </g>
+  </g>
+</svg>
