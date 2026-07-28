@@ -1,3 +1,5 @@
+import { LSP_DISZIPLIN_IDS } from './leistungsspange';
+
 export const A_PART_POSITIONS = [
   { id: 'a-gruppenfuehrer', label: 'Gruppenführer (GF)', shortLabel: 'GF', section: 'A-Teil' },
   { id: 'a-melder', label: 'Melder (Me)', shortLabel: 'Me', section: 'A-Teil' },
@@ -17,7 +19,72 @@ export const B_PART_POSITIONS = Array.from({ length: 9 }, (_, index) => ({
   section: 'B-Teil'
 }));
 
-export const ALL_POSITIONS = [...A_PART_POSITIONS, ...B_PART_POSITIONS];
+// Leistungsspange: taktische Gliederung nach FwDV 3. Die Gruppe entspricht den
+// Funktionen des A-Teils, die Staffel kommt ohne Melder/-in und Schlauchtrupp aus.
+//
+// Die Brusttuch-Nummern der Schnelligkeitsübung (1–8 bzw. 1–5, Einheitsführer/-in
+// ohne Brusttuch) und der sportlichen Disziplinen (1–9 bzw. 1–6) werden bewusst
+// nicht als eigene Positionen geführt: sie sind laut Richtlinie frei vergebbar und
+// nicht an die taktische Funktion gebunden. Sie stehen als Ablaufhinweis in der
+// Wissensdatenbank.
+export const LSP_GRUPPE_POSITIONS = [
+  { id: 'lsp-g-gruppenfuehrer', label: 'Gruppenführer (GF)', shortLabel: 'GF', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-melder', label: 'Melder (Me)', shortLabel: 'Me', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-maschinist', label: 'Maschinist (Ma)', shortLabel: 'Ma', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-angriffstruppfuehrer', label: 'Angriffstruppführer (ATF)', shortLabel: 'ATF', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-angriffstruppmann', label: 'Angriffstruppmann (ATM)', shortLabel: 'ATM', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-wassertruppfuehrer', label: 'Wassertruppführer (WTF)', shortLabel: 'WTF', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-wassertruppmann', label: 'Wassertruppmann (WTM)', shortLabel: 'WTM', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-schlauchtruppfuehrer', label: 'Schlauchtruppführer (STF)', shortLabel: 'STF', section: 'LSP-Gruppe' },
+  { id: 'lsp-g-schlauchtruppmann', label: 'Schlauchtruppmann (STM)', shortLabel: 'STM', section: 'LSP-Gruppe' }
+];
+
+export const LSP_STAFFEL_POSITIONS = [
+  { id: 'lsp-s-staffelfuehrer', label: 'Staffelführer (StF)', shortLabel: 'StF', section: 'LSP-Staffel' },
+  { id: 'lsp-s-maschinist', label: 'Maschinist (Ma)', shortLabel: 'Ma', section: 'LSP-Staffel' },
+  { id: 'lsp-s-angriffstruppfuehrer', label: 'Angriffstruppführer (ATF)', shortLabel: 'ATF', section: 'LSP-Staffel' },
+  { id: 'lsp-s-angriffstruppmann', label: 'Angriffstruppmann (ATM)', shortLabel: 'ATM', section: 'LSP-Staffel' },
+  { id: 'lsp-s-wassertruppfuehrer', label: 'Wassertruppführer (WTF)', shortLabel: 'WTF', section: 'LSP-Staffel' },
+  { id: 'lsp-s-wassertruppmann', label: 'Wassertruppmann (WTM)', shortLabel: 'WTM', section: 'LSP-Staffel' }
+];
+
+// Zuordnung LSP-Gruppe → A-Teil, damit eine bestehende A-Teil-Aufstellung
+// übernommen werden kann (die Funktionen sind deckungsgleich).
+export const LSP_GRUPPE_VON_A_TEIL = {
+  'lsp-g-gruppenfuehrer': 'a-gruppenfuehrer',
+  'lsp-g-melder': 'a-melder',
+  'lsp-g-maschinist': 'a-maschinist',
+  'lsp-g-angriffstruppfuehrer': 'a-angriffstruppfuehrer',
+  'lsp-g-angriffstruppmann': 'a-angriffstruppmann',
+  'lsp-g-wassertruppfuehrer': 'a-wassertruppfuehrer',
+  'lsp-g-wassertruppmann': 'a-wassertruppmann',
+  'lsp-g-schlauchtruppfuehrer': 'a-schlauchtruppfuehrer',
+  'lsp-g-schlauchtruppmann': 'a-schlauchtruppmann'
+};
+
+// Die Staffel kennt keinen Melder und keinen Schlauchtrupp; alles Übrige lässt
+// sich aus dem A-Teil übernehmen.
+export const LSP_STAFFEL_VON_A_TEIL = {
+  'lsp-s-staffelfuehrer': 'a-gruppenfuehrer',
+  'lsp-s-maschinist': 'a-maschinist',
+  'lsp-s-angriffstruppfuehrer': 'a-angriffstruppfuehrer',
+  'lsp-s-angriffstruppmann': 'a-angriffstruppmann',
+  'lsp-s-wassertruppfuehrer': 'a-wassertruppfuehrer',
+  'lsp-s-wassertruppmann': 'a-wassertruppmann'
+};
+
+export const ALL_POSITIONS = [
+  ...A_PART_POSITIONS,
+  ...B_PART_POSITIONS,
+  ...LSP_GRUPPE_POSITIONS,
+  ...LSP_STAFFEL_POSITIONS
+];
+
+// Modus-Kennungen der Stoppuhr-Drafts. Der Bundeswettbewerb behält 'a'/'b', die
+// Leistungsspange bringt je Disziplin einen eigenen Slot mit.
+export const BW_MODE_IDS = ['a', 'b'];
+export const LSP_MODE_IDS = [...LSP_DISZIPLIN_IDS];
+export const ALL_MODE_IDS = [...BW_MODE_IDS, ...LSP_MODE_IDS];
 
 export const DEMO_MEMBERS = [
   'Leon',
@@ -94,15 +161,21 @@ export function createEmptyStopwatchDraft(mode = 'a') {
     notes: '',
     scoringEnabled: false,
     targetSeconds: null,
-    fehlerCounts: {}
+    fehlerCounts: {},
+    // Nur Leistungsspange: Gesamtweite beim Kugelstoßen (in Zentimetern),
+    // Bewertung 0–4 bei Löschangriff und Fragenbeantwortung, angehakte
+    // Nullwertungsgründe sowie die Wettbewerbsform, in der gemessen wurde.
+    measuredCm: null,
+    judgePoints: null,
+    nullwertungIds: [],
+    lspVariante: null
   };
 }
 
-// A- und B-Teil laufen als zwei unabhängige Stoppuhren parallel in derselben
-// Instanz: ein Team kann den A-Teil messen, ein anderes gleichzeitig den B-Teil.
+// Jeder Modus hat seine eigene Stoppuhr und läuft unabhängig: im Bundeswettbewerb
+// kann ein Team den A-Teil messen, während ein anderes gleichzeitig den B-Teil
+// läuft; bei der Leistungsspange arbeiten die fünf Wertungsrichter/-innen parallel
+// an ihren jeweiligen Disziplinen.
 export function createEmptyStopwatchDrafts() {
-  return {
-    a: createEmptyStopwatchDraft('a'),
-    b: createEmptyStopwatchDraft('b')
-  };
+  return Object.fromEntries(ALL_MODE_IDS.map((modeId) => [modeId, createEmptyStopwatchDraft(modeId)]));
 }
