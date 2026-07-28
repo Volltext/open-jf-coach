@@ -5,9 +5,11 @@ import {
   Award,
   BarChart2,
   BookOpen,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   CircleDashed,
+  ClipboardList,
   Download,
   Eye,
   Link as LinkIcon,
@@ -15,6 +17,7 @@ import {
   Moon,
   Plus,
   RotateCcw,
+  Ruler,
   Save,
   Search,
   Settings,
@@ -34,9 +37,36 @@ import {
   B_MODE_MARKERS,
   B_PART_POSITIONS,
   DEMO_MEMBERS,
+  LSP_GRUPPE_POSITIONS,
+  LSP_GRUPPE_VON_A_TEIL,
+  LSP_STAFFEL_POSITIONS,
+  LSP_STAFFEL_VON_A_TEIL,
   buildEmptyAssignments,
   createEmptyStopwatchDraft
 } from './domain';
+import {
+  COMPETITIONS,
+  DEFAULT_COMPETITION_ID,
+  STOPWATCH_MODE_IDS,
+  getCompetitionForMode,
+  getDisziplinForMode,
+  getMode,
+  getModeLabel,
+  getModesForCompetition
+} from './competitions';
+import {
+  LSP_FRAGEN_GEBIETE,
+  LSP_FRAGEN_HINWEIS,
+  LSP_GESAMTEINDRUCK_SKALA,
+  LSP_MINDESTPUNKTE,
+  LSP_OHNE_HINDERNIS_FEHLER_IDS,
+  LSP_WERTUNGSRICHTER,
+  computeLspDisziplin,
+  computeLspGesamt,
+  getLspVariante,
+  naechsteStufe
+} from './leistungsspange';
+import { LSP_POSITION_GUIDES, LSP_RULE_ENTRIES } from './lspKnowledge';
 import { KNOT_GUIDES, POSITION_GUIDES, RULE_ENTRIES } from './knowledge';
 import { computeScore, getScoringConfig, resolveFehlerList, sumFehlerpunkte } from './scoring';
 import { extractSyncStateFromApp, initCloudSync, mergeRemoteStateIntoApp } from './cloudSync';
@@ -150,6 +180,64 @@ function getDisplayName(memberId, memberMap, record) {
   return memberMap[memberId]?.name ?? record?.lineupSnapshot?.memberNames?.[memberId] ?? 'Unbekannt';
 }
 
+// Abschnitte der Aufstellung je Wettbewerb. Beide Wettbewerbe teilen sich denselben
+// Bildschirm, tauschen aber ihre Positionsliste aus.
+const LINEUP_SECTIONS = {
+  bw: [
+    { key: 'A', label: 'A-Teil', positions: A_PART_POSITIONS, guideSection: 'A-Teil' },
+    { key: 'B', label: 'B-Teil', positions: B_PART_POSITIONS, guideSection: 'B-Teil' }
+  ],
+  // Bei der Leistungsspange tritt eine Einheit entweder als Gruppe oder als Staffel
+  // an. Der Abschnitt ist deshalb kein eigener Schalter, sondern folgt der
+  // Wettbewerbsform – sie bestimmt zugleich die Wertungstabellen.
+  lsp: [
+    { key: 'LSP-G', varianteId: 'gruppe', label: 'Gruppe', positions: LSP_GRUPPE_POSITIONS, guideSection: 'LSP-Gruppe', vonATeil: LSP_GRUPPE_VON_A_TEIL },
+    { key: 'LSP-S', varianteId: 'staffel', label: 'Staffel', positions: LSP_STAFFEL_POSITIONS, guideSection: 'LSP-Staffel', vonATeil: LSP_STAFFEL_VON_A_TEIL }
+  ]
+};
+
+const MARKER_ICONS = {
+  [A_MODE_MARKERS[0]]: LinkIcon,
+  [A_MODE_MARKERS[1]]: Shield,
+  [B_MODE_MARKERS[0]]: Shield,
+  [B_MODE_MARKERS[1]]: LinkIcon,
+  [B_MODE_MARKERS[2]]: CircleDashed
+};
+
+function anyDraftRunning(drafts) {
+  return STOPWATCH_MODE_IDS.some((mode) => Boolean(drafts?.[mode]?.isRunning));
+}
+
+// Wertungsrelevante Zeitangabe der Leistungsspange: auf Zehntel genau, wie sie an
+// der Bahn abgelesen wird.
+function formatLspSekunden(sekunden) {
+  if (typeof sekunden !== 'number' || !Number.isFinite(sekunden)) {
+    return '–';
+  }
+  return `${sekunden.toFixed(1).replace('.', ',')} s`;
+}
+
+function formatMeter(zentimeter) {
+  if (typeof zentimeter !== 'number' || !Number.isFinite(zentimeter)) {
+    return '–';
+  }
+  return `${(zentimeter / 100).toFixed(2).replace('.', ',')} m`;
+}
+
+// Gesamtweite in Metern mit bis zu zwei Nachkommastellen; gespeichert wird in
+// Zentimetern, damit die Tabellenvergleiche ganzzahlig bleiben.
+function parseMeterToCm(raw) {
+  const trimmed = String(raw ?? '').trim().replace(',', '.');
+  if (!trimmed) {
+    return null;
+  }
+  const meter = Number.parseFloat(trimmed);
+  if (!Number.isFinite(meter) || meter <= 0) {
+    return null;
+  }
+  return Math.round(meter * 100);
+}
+
 function App({ isDemo = false }) {
   const [appState, setAppState] = useState(() => createDefaultState());
   const [isLoaded, setIsLoaded] = useState(false);
@@ -176,6 +264,11 @@ function App({ isDemo = false }) {
   const [fehlerSearch, setFehlerSearch] = useState('');
   const [expandedFehlerGroup, setExpandedFehlerGroup] = useState(null);
   const [targetInput, setTargetInput] = useState('');
+  // Leistungsspange: Eingabefeld der Kugelstoß-Gesamtweite, Beobachtungshilfe zum
+  // Löschangriff und aufgeklapptes Wissensgebiet der Fragenbeantwortung.
+  const [measuredInput, setMeasuredInput] = useState('');
+  const [showLoeschangriffHilfe, setShowLoeschangriffHilfe] = useState(false);
+  const [expandedGebietId, setExpandedGebietId] = useState(null);
   const [toast, setToast] = useState(null);
   const [pendingDeleteRunId, setPendingDeleteRunId] = useState(null);
   const [displaySyncStatus, setDisplaySyncStatus] = useState('offline');
@@ -183,6 +276,20 @@ function App({ isDemo = false }) {
   const [showShare, setShowShare] = useState(false);
   const [showDemoNote, setShowDemoNote] = useState(true);
   const [theme, setTheme] = useState(getInitialTheme);
+
+  // Aktiver Wettbewerb. Er kommt aus den Einstellungen und entscheidet, welche
+  // Disziplinen, Positionen und Wissensinhalte die vier Tabs zeigen.
+  const activeCompetition = appState.preferences?.competition ?? DEFAULT_COMPETITION_ID;
+  const isLsp = activeCompetition === 'lsp';
+  const competitionModes = getModesForCompetition(activeCompetition);
+  // Der lokal gewählte Modus wird gegen den aktiven Wettbewerb geprüft: nach einem
+  // Wettbewerbswechsel greift ohne Umweg über einen Effekt die erste Disziplin.
+  const activeMode = competitionModes.some((mode) => mode.id === activeStopwatchMode)
+    ? activeStopwatchMode
+    : competitionModes[0].id;
+  const activeModeInfo = getMode(activeMode);
+  const activeDisziplin = getDisziplinForMode(activeMode);
+  const lspVariante = getLspVariante(appState.lsp?.variante);
 
   function openSetup() {
     window.location.assign(`${window.location.pathname}?setup`);
@@ -267,7 +374,7 @@ function App({ isDemo = false }) {
     // Fehler-Tippen mehrerer Betreuer das Backend nicht flutet. Der jeweils letzte
     // Stand wird über einen nachlaufenden Push garantiert übertragen – sonst ginge
     // z. B. der zuletzt erfasste Fehler verloren und fehlte im gespeicherten Lauf.
-    const anyRunning = appState.stopwatchDrafts.a.isRunning || appState.stopwatchDrafts.b.isRunning;
+    const anyRunning = anyDraftRunning(appState.stopwatchDrafts);
     const nowTs = Date.now();
     const sinceLastPush = nowTs - lastCloudPushAtRef.current;
     if (anyRunning && sinceLastPush < 350) {
@@ -312,13 +419,16 @@ function App({ isDemo = false }) {
 
         setAppState((currentState) => {
           const merged = mergeRemoteStateIntoApp(currentState, remoteData, reanchor);
+          const draftsUnchanged = STOPWATCH_MODE_IDS.every(
+            (mode) => merged.stopwatchDrafts[mode] === currentState.stopwatchDrafts[mode]
+          );
           if (
             merged.members === currentState.members
             && merged.lineups === currentState.lineups
             && merged.trainingLog === currentState.trainingLog
             && merged.deletedRuns === currentState.deletedRuns
-            && merged.stopwatchDrafts.a === currentState.stopwatchDrafts.a
-            && merged.stopwatchDrafts.b === currentState.stopwatchDrafts.b
+            && merged.lsp === currentState.lsp
+            && draftsUnchanged
           ) {
             // Nichts Neues übernommen → keinen ausgehenden Push unterdrücken,
             // sonst bliebe das Flag hängen und verschluckte die nächste lokale Änderung.
@@ -342,7 +452,7 @@ function App({ isDemo = false }) {
     };
   }, [isLoaded]);
 
-  const anyTimerRunning = appState.stopwatchDrafts.a.isRunning || appState.stopwatchDrafts.b.isRunning;
+  const anyTimerRunning = anyDraftRunning(appState.stopwatchDrafts);
 
   useEffect(() => {
     if (!anyTimerRunning) {
@@ -386,14 +496,25 @@ function App({ isDemo = false }) {
   // Beim Moduswechsel (oder geänderter Vorgabezeit des aktiven Laufs) das
   // Eingabefeld auf den jeweils aktiven Draft nachziehen.
   useEffect(() => {
-    const target = appState.stopwatchDrafts[activeStopwatchMode].targetSeconds;
+    const target = appState.stopwatchDrafts[activeMode].targetSeconds;
     setTargetInput((current) => {
       if (parseTargetToSeconds(current) === target) {
         return current;
       }
       return target === null ? '' : formatSecondsToInput(target);
     });
-  }, [appState.stopwatchDrafts, activeStopwatchMode]);
+  }, [appState.stopwatchDrafts, activeMode]);
+
+  // Dasselbe für die Kugelstoß-Gesamtweite der Leistungsspange.
+  useEffect(() => {
+    const measured = appState.stopwatchDrafts[activeMode].measuredCm;
+    setMeasuredInput((current) => {
+      if (parseMeterToCm(current) === measured) {
+        return current;
+      }
+      return measured === null ? '' : (measured / 100).toFixed(2).replace('.', ',');
+    });
+  }, [appState.stopwatchDrafts, activeMode]);
 
   // Transiente Zustände (syncing/connecting) entprellen, damit der Indikator beim
   // Timer-Start o. Ä. nicht ständig kurz auf Orange flackert. Stabile Zustände
@@ -429,17 +550,30 @@ function App({ isDemo = false }) {
     [appState.members]
   );
 
-  const currentPositions = lineupTab === 'A' ? A_PART_POSITIONS : B_PART_POSITIONS;
+  const lineupSections = LINEUP_SECTIONS[activeCompetition];
+  const activeLineupSection = isLsp
+    ? (lineupSections.find((section) => section.varianteId === lspVariante.id) ?? lineupSections[0])
+    : (lineupSections.find((section) => section.key === lineupTab) ?? lineupSections[0]);
+  const currentPositions = activeLineupSection.positions;
+  // Die Positions-Matrix zeigt die Positionen des aktiven Wettbewerbs – sonst
+  // würde die Tabelle mit jedem neuen Abschnitt breiter und unlesbar.
+  const matrixPositions = lineupSections.flatMap((section) => section.positions);
   const selectedPosition = currentPositions.find((position) => position.id === selectedPositionId) ?? null;
-  const stopwatchDraft = appState.stopwatchDrafts[activeStopwatchMode];
-  const otherStopwatchMode = activeStopwatchMode === 'a' ? 'b' : 'a';
-  const otherStopwatchDraft = appState.stopwatchDrafts[otherStopwatchMode];
+  const stopwatchDraft = appState.stopwatchDrafts[activeMode];
+  // Im selben Wettbewerb kann parallel eine weitere Disziplin laufen – etwa der
+  // B-Teil neben dem A-Teil oder der Staffellauf neben der Schnelligkeitsübung.
+  const otherRunningMode = competitionModes.find(
+    (mode) => mode.id !== activeMode && appState.stopwatchDrafts[mode.id]?.isRunning
+  ) ?? null;
+  const otherStopwatchDraft = otherRunningMode ? appState.stopwatchDrafts[otherRunningMode.id] : null;
   const elapsedMs = stopwatchDraft.isRunning && stopwatchDraft.startTimestamp
     ? Math.max(0, now - stopwatchDraft.startTimestamp)
     : stopwatchDraft.elapsedMs;
-  const otherElapsedMs = otherStopwatchDraft.isRunning && otherStopwatchDraft.startTimestamp
-    ? Math.max(0, now - otherStopwatchDraft.startTimestamp)
-    : otherStopwatchDraft.elapsedMs;
+  const otherElapsedMs = otherStopwatchDraft
+    ? (otherStopwatchDraft.isRunning && otherStopwatchDraft.startTimestamp
+        ? Math.max(0, now - otherStopwatchDraft.startTimestamp)
+        : otherStopwatchDraft.elapsedMs)
+    : 0;
   const isTimerControlledByOther = stopwatchDraft.isRunning
     && Boolean(stopwatchDraft.controllerId)
     && stopwatchDraft.controllerId !== deviceIdRef.current;
@@ -448,21 +582,19 @@ function App({ isDemo = false }) {
     ? Math.max(0, elapsedMs - stopwatchDraft.knotStartElapsedMs)
     : stopwatchDraft.knotDurationMs;
 
-  const markerButtons = stopwatchDraft.mode === 'a'
-    ? [
-        { label: A_MODE_MARKERS[0], icon: LinkIcon },
-        { label: A_MODE_MARKERS[1], icon: Shield }
-      ]
-    : [
-        { label: B_MODE_MARKERS[0], icon: Shield },
-        { label: B_MODE_MARKERS[1], icon: LinkIcon },
-        { label: B_MODE_MARKERS[2], icon: CircleDashed }
-      ];
+  // Die Leistungsspange kennt keine Zwischenzeiten – dort bleibt die Liste leer und
+  // die Karte wird gar nicht erst gerendert.
+  const markerButtons = activeModeInfo.markers.map((label) => ({
+    label,
+    icon: MARKER_ICONS[label] ?? CircleDashed
+  }));
 
-  const scoringConfig = getScoringConfig(stopwatchDraft.mode);
-  const fehlerpunkte = sumFehlerpunkte(stopwatchDraft.mode, stopwatchDraft.fehlerCounts);
-  const score = computeScore(stopwatchDraft.mode, elapsedMs, stopwatchDraft.targetSeconds, fehlerpunkte);
-  const resolvedFehler = resolveFehlerList(stopwatchDraft.mode, stopwatchDraft.fehlerCounts);
+  // Die Bundeswettbewerbs-Wertung wird nur für deren eigene Modi berechnet; die
+  // Leistungsspange bringt ihre eigene Punktelogik mit.
+  const scoringConfig = getScoringConfig(activeMode);
+  const fehlerpunkte = isLsp ? 0 : sumFehlerpunkte(activeMode, stopwatchDraft.fehlerCounts);
+  const score = isLsp ? null : computeScore(activeMode, elapsedMs, stopwatchDraft.targetSeconds, fehlerpunkte);
+  const resolvedFehler = isLsp ? [] : resolveFehlerList(activeMode, stopwatchDraft.fehlerCounts);
   const fehlerQuery = fehlerSearch.trim().toLowerCase();
   const filteredFehlerGroups = fehlerQuery
     ? scoringConfig.groups
@@ -470,7 +602,62 @@ function App({ isDemo = false }) {
         .filter((group) => group.errors.length > 0)
     : scoringConfig.groups;
 
+  // Beobachtungshilfe für den LSP-Löschangriff: A-Teil-Katalog ohne die Hindernisse.
+  const loeschangriffGroups = useMemo(
+    () => getScoringConfig('a').groups
+      .map((group) => ({
+        ...group,
+        errors: group.errors.filter((entry) => !LSP_OHNE_HINDERNIS_FEHLER_IDS.includes(entry.id))
+      }))
+      .filter((group) => group.errors.length > 0),
+    []
+  );
+
+  // Aktuelle Wertung der angezeigten LSP-Disziplin (live, noch nicht gespeichert).
+  const lspLiveErgebnis = isLsp
+    ? computeLspDisziplin(activeMode, lspVariante.id, { ...stopwatchDraft, totalMs: elapsedMs })
+    : null;
+  const lspNaechsteStufe = lspLiveErgebnis && lspLiveErgebnis.punkte !== null && !lspLiveErgebnis.nullwertung
+    ? naechsteStufe(activeMode, lspVariante.id, lspLiveErgebnis.punkte)
+    : null;
+  // Beim Löschangriff dürfen die Häkchen der Beobachtungshilfe mitgespeichert
+  // werden – sie fließen bewusst nicht in die Punktzahl ein, sondern ins Debriefing.
+  const lspBeobachtungen = activeMode === 'lsp-loeschangriff'
+    ? resolveFehlerList('a', stopwatchDraft.fehlerCounts).map((entry) => entry.label)
+    : [];
+
+  const canSaveRun = !stopwatchDraft.isRunning
+    && !isTimerControlledByOther
+    && (isLsp
+      ? (activeModeInfo.kind === 'timed' ? elapsedMs > 0 : lspLiveErgebnis?.punkte !== null)
+      : elapsedMs > 0);
+
   const runs = appState.trainingLog;
+  // Das Tagebuch zeigt die Läufe des aktiven Wettbewerbs; die übrigen bleiben
+  // gespeichert und erscheinen wieder, sobald zurückgewechselt wird.
+  const visibleRuns = useMemo(
+    () => runs.filter((run) => getCompetitionForMode(run.mode) === activeCompetition),
+    [runs, activeCompetition]
+  );
+
+  // Wertungsbogen: je Disziplin zählt der zuletzt gespeicherte Lauf.
+  const lspLetzteLaeufe = useMemo(() => {
+    const result = {};
+    for (const run of runs) {
+      if (run.lsp && !result[run.mode]) {
+        result[run.mode] = run;
+      }
+    }
+    return result;
+  }, [runs]);
+
+  const lspGesamt = useMemo(
+    () => computeLspGesamt(
+      Object.fromEntries(Object.entries(lspLetzteLaeufe).map(([mode, run]) => [mode, run.lsp?.punkte ?? null])),
+      appState.lsp?.gesamteindruck
+    ),
+    [lspLetzteLaeufe, appState.lsp?.gesamteindruck]
+  );
 
   const matrix = useMemo(() => {
     const result = {};
@@ -503,21 +690,34 @@ function App({ isDemo = false }) {
     return maxCount || 1;
   }, [matrix]);
 
+  // Die Wissensdatenbank tauscht mit dem Wettbewerb ihre Inhalte: Knoten gehören
+  // zum A-Teil, die Wissensgebiete der Fragenbeantwortung zur Leistungsspange.
+  const knowledgeViews = isLsp
+    ? [{ key: 'rules', label: 'Regeln' }, { key: 'positions', label: 'Positionen' }, { key: 'fragen', label: 'Fragen' }]
+    : [{ key: 'rules', label: 'Regeln' }, { key: 'positions', label: 'Positionen' }, { key: 'knots', label: 'Knoten' }];
+  const activeKnowledgeView = knowledgeViews.some((view) => view.key === knowledgeView) ? knowledgeView : 'positions';
+
+  const ruleEntries = isLsp ? LSP_RULE_ENTRIES : RULE_ENTRIES;
+  const positionGuides = isLsp ? LSP_POSITION_GUIDES : POSITION_GUIDES;
+  const activeKnowledgeSection = isLsp
+    ? activeLineupSection
+    : (lineupSections.find((section) => section.key === positionKnowledgeTab) ?? lineupSections[0]);
+
   const filteredRules = useMemo(() => {
     const query = knowledgeQuery.trim().toLowerCase();
     if (!query) {
-      return RULE_ENTRIES;
+      return ruleEntries;
     }
 
-    return RULE_ENTRIES.filter((entry) => {
+    return ruleEntries.filter((entry) => {
       const haystack = `${entry.title} ${entry.category} ${entry.summary} ${entry.details.join(' ')} ${entry.keywords.join(' ')}`.toLowerCase();
       return haystack.includes(query);
     });
-  }, [knowledgeQuery]);
+  }, [knowledgeQuery, ruleEntries]);
 
   const filteredGuides = useMemo(() => {
     const query = knowledgeQuery.trim().toLowerCase();
-    const source = POSITION_GUIDES.filter((guide) => guide.section === (positionKnowledgeTab === 'A' ? 'A-Teil' : 'B-Teil'));
+    const source = positionGuides.filter((guide) => guide.section === activeKnowledgeSection.guideSection);
 
     if (!query) {
       return source;
@@ -527,7 +727,7 @@ function App({ isDemo = false }) {
       const haystack = `${guide.title} ${guide.shortLabel} ${guide.section} ${guide.duties.join(' ')} ${guide.watchouts.join(' ')}`.toLowerCase();
       return haystack.includes(query);
     });
-  }, [knowledgeQuery, positionKnowledgeTab]);
+  }, [knowledgeQuery, positionGuides, activeKnowledgeSection]);
 
   const filteredKnots = useMemo(() => {
     const query = knowledgeQuery.trim().toLowerCase();
@@ -681,7 +881,7 @@ function App({ isDemo = false }) {
   // den Stand übernehmen und die laufende Zeit am eigenen Takt neu verankern.
   function updateStopwatchDraft(updater) {
     updateState((currentState) => {
-      const mode = activeStopwatchMode;
+      const mode = activeMode;
       const current = currentState.stopwatchDrafts[mode];
       const next = updater(current);
       if (next === current) {
@@ -740,7 +940,8 @@ function App({ isDemo = false }) {
 
     const hasTaskTimers = stopwatchDraft.taskTimers && Object.values(stopwatchDraft.taskTimers).some((t) => t !== null);
     const hasFehler = stopwatchDraft.fehlerCounts && Object.values(stopwatchDraft.fehlerCounts).some((count) => count > 0);
-    const hasData = elapsedMs > 0 || stopwatchDraft.markers.length > 0 || stopwatchDraft.knotDurationMs !== null || stopwatchDraft.knotStartElapsedMs !== null || hasTaskTimers || hasFehler;
+    const hasLspData = stopwatchDraft.measuredCm !== null || stopwatchDraft.judgePoints !== null || stopwatchDraft.nullwertungIds?.length > 0;
+    const hasData = elapsedMs > 0 || stopwatchDraft.markers.length > 0 || stopwatchDraft.knotDurationMs !== null || stopwatchDraft.knotStartElapsedMs !== null || hasTaskTimers || hasFehler || hasLspData;
     if (!hasData) {
       updateStopwatchDraft((currentDraft) => ({
         ...createEmptyStopwatchDraft(currentDraft.mode),
@@ -770,13 +971,113 @@ function App({ isDemo = false }) {
   // Wechselt nur die lokale Ansicht zwischen dem A- und B-Lauf. Beide laufen
   // unabhängig weiter – es wird nichts zurückgesetzt und nichts synchronisiert.
   function switchStopwatchMode(mode) {
-    if (mode === activeStopwatchMode) {
+    if (mode === activeMode) {
       return;
     }
     setActiveStopwatchMode(mode);
     setShowResetConfirm(false);
     setFehlerSearch('');
     setExpandedFehlerGroup(null);
+    setShowLoeschangriffHilfe(false);
+  }
+
+  // Wechselt den Wettbewerb. Die Auswahl wird gespeichert, damit die App nach dem
+  // Neustart dort weitermacht, wo trainiert wurde. Laufende Zeiten bleiben in ihrem
+  // jeweiligen Modus erhalten – es wird nichts zurückgesetzt.
+  function switchCompetition(competitionId) {
+    if (competitionId === activeCompetition) {
+      return;
+    }
+    updateState((currentState) => ({
+      ...currentState,
+      preferences: { ...currentState.preferences, competition: competitionId }
+    }));
+    // `lineupTab` und `positionKnowledgeTab` bleiben unangetastet: sie gelten nur
+    // für den Bundeswettbewerb und stellen beim Zurückwechseln den vorherigen
+    // Abschnitt wieder her.
+    setActiveStopwatchMode(getModesForCompetition(competitionId)[0].id);
+    setSelectedPositionId(null);
+    setSwapSourceId(null);
+    setExpandedGuideId(null);
+    setShowResetConfirm(false);
+    setFehlerSearch('');
+    setExpandedFehlerGroup(null);
+    setShowLoeschangriffHilfe(false);
+  }
+
+  function switchLspVariante(varianteId) {
+    updateState((currentState) => ({
+      ...currentState,
+      lsp: { ...currentState.lsp, variante: varianteId }
+    }));
+  }
+
+  // Bewertung 0–4 für Löschangriff und Fragenbeantwortung. Erneutes Antippen des
+  // gleichen Wertes hebt die Auswahl wieder auf.
+  function setJudgePoints(punkte) {
+    updateStopwatchDraft((currentDraft) => ({
+      ...currentDraft,
+      stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
+      judgePoints: currentDraft.judgePoints === punkte ? null : punkte
+    }));
+  }
+
+  // Ein angehakter Nullwertungsgrund sticht jede errechnete Punktzahl.
+  function toggleNullwertung(nullwertungId) {
+    updateStopwatchDraft((currentDraft) => {
+      const current = currentDraft.nullwertungIds ?? [];
+      const next = current.includes(nullwertungId)
+        ? current.filter((id) => id !== nullwertungId)
+        : [...current, nullwertungId];
+      return {
+        ...currentDraft,
+        stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
+        nullwertungIds: next
+      };
+    });
+  }
+
+  function handleMeasuredInput(raw) {
+    setMeasuredInput(raw);
+    const zentimeter = parseMeterToCm(raw);
+    updateStopwatchDraft((currentDraft) => ({
+      ...currentDraft,
+      stopwatchVersion: (currentDraft.stopwatchVersion ?? 0) + 1,
+      measuredCm: zentimeter
+    }));
+  }
+
+  function setGesamteindruck(index, punkte) {
+    updateState((currentState) => {
+      const current = currentState.lsp?.gesamteindruck ?? [];
+      const next = current.map((wert, position) => {
+        if (position !== index) {
+          return wert;
+        }
+        return wert === punkte ? null : punkte;
+      });
+      return { ...currentState, lsp: { ...currentState.lsp, gesamteindruck: next } };
+    });
+  }
+
+  // Übernimmt die A-Teil-Aufstellung in den aktiven LSP-Abschnitt. Die Funktionen
+  // sind deckungsgleich; die Staffel lässt Melder/-in und Schlauchtrupp weg.
+  function applyATeilToLspSection() {
+    const mapping = activeLineupSection.vonATeil;
+    if (!mapping) {
+      return;
+    }
+
+    updateAssignments((currentAssignments) => {
+      const nextAssignments = { ...currentAssignments };
+      for (const [lspPositionId, aPositionId] of Object.entries(mapping)) {
+        nextAssignments[lspPositionId] = currentAssignments[aPositionId] ?? null;
+      }
+      return nextAssignments;
+    });
+    setSelectedPositionId(null);
+    setSwapSourceId(null);
+    showToast('Aus A-Teil übernommen ✓');
   }
 
   function addSplit(label) {
@@ -928,17 +1229,25 @@ function App({ isDemo = false }) {
   }
 
   function saveRun() {
-    if (isTimerControlledByOther) {
-      return;
-    }
-
-    if (stopwatchDraft.isRunning || elapsedMs <= 0) {
+    if (!canSaveRun) {
       return;
     }
 
     const memberNames = Object.fromEntries(appState.members.map((member) => [member.id, member.name]));
-    const scoring = stopwatchDraft.scoringEnabled ? { ...score, fehler: resolvedFehler } : null;
-    const mode = activeStopwatchMode;
+    const scoring = !isLsp && stopwatchDraft.scoringEnabled ? { ...score, fehler: resolvedFehler } : null;
+    // Der LSP-Teil des Laufs trägt die Wertung der Disziplin; er ist zugleich das
+    // Kennzeichen, an dem der Wertungsbogen seine Einträge erkennt.
+    const lsp = isLsp
+      ? {
+          variante: lspVariante.id,
+          punkte: lspLiveErgebnis.punkte,
+          basis: lspLiveErgebnis.basis,
+          nullwertung: lspLiveErgebnis.nullwertung,
+          gruende: lspLiveErgebnis.gruende,
+          beobachtungen: lspBeobachtungen
+        }
+      : null;
+    const mode = activeMode;
 
     updateState((currentState) => {
       const savedDraft = currentState.stopwatchDrafts[mode];
@@ -956,6 +1265,7 @@ function App({ isDemo = false }) {
             taskTimers: savedDraft.taskTimers ?? {},
             notes: savedDraft.notes,
             scoring,
+            lsp,
             lineupSnapshot: {
               assignments: { ...currentState.lineups.assignments },
               memberNames
@@ -1045,11 +1355,13 @@ function App({ isDemo = false }) {
   }
 
   function exportTrainingLogCSV() {
-    const rows = [['Datum', 'Modus', 'Zeit (s)', 'Wertung', 'Vorgabe', 'Fehlerpunkte', 'Notizen', 'Aufstellung']];
+    // Die neuen Spalten hängen hinten an, damit bestehende Auswertungen der
+    // bisherigen Spalten unverändert weiterfunktionieren.
+    const rows = [['Datum', 'Modus', 'Zeit (s)', 'Wertung', 'Vorgabe', 'Fehlerpunkte', 'Notizen', 'Aufstellung', 'Wettbewerb', 'LSP-Punkte']];
 
     for (const run of appState.trainingLog) {
       const date = new Date(run.createdAt).toLocaleString('de-DE');
-      const mode = run.mode === 'a' ? 'A-Teil' : 'B-Teil';
+      const mode = getModeLabel(run.mode);
       const totalSec = (run.totalMs / 1000).toFixed(2);
       const scoring = run.scoring?.total ?? '';
       const vorgabe = run.scoring?.vorgabe ?? '';
@@ -1063,7 +1375,9 @@ function App({ isDemo = false }) {
           return `${pos?.shortLabel ?? posId}:${name}`;
         })
         .join(' ');
-      rows.push([date, mode, totalSec, scoring, vorgabe, fehler, notes, lineup]);
+      const wettbewerb = run.lsp ? 'Leistungsspange' : 'Bundeswettbewerb';
+      const lspPunkte = run.lsp ? (run.lsp.punkte ?? '') : '';
+      rows.push([date, mode, totalSec, scoring, vorgabe, fehler, notes, lineup, wettbewerb, lspPunkte]);
     }
 
     const csv = rows.map((r) => r.map(escapeCsvCell).join(',')).join('\n');
@@ -1147,6 +1461,24 @@ function App({ isDemo = false }) {
           </button>
         </div>
 
+        {/* Wettbewerbs-Umschalter: gilt für alle vier Tabs und bestimmt, welche
+            Disziplinen, Positionen und Wissensinhalte angezeigt werden. */}
+        <div className="competition-bar">
+          <div className="segmented-bar" role="group" aria-label="Wettbewerb wählen">
+            {COMPETITIONS.map((competition) => (
+              <button
+                key={competition.id}
+                type="button"
+                className={activeCompetition === competition.id ? 'active' : ''}
+                aria-pressed={activeCompetition === competition.id}
+                onClick={() => switchCompetition(competition.id)}
+              >
+                {competition.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {activeTab === 'lineup' && (
           <section className="tab-screen">
             <div className="section-head">
@@ -1191,13 +1523,30 @@ function App({ isDemo = false }) {
             )}
 
             <div className="segmented-bar">
-              <button type="button" className={lineupTab === 'A' ? 'active' : ''} onClick={() => setLineupTab('A')}>
-                A-Teil
-              </button>
-              <button type="button" className={lineupTab === 'B' ? 'active' : ''} onClick={() => setLineupTab('B')}>
-                B-Teil
-              </button>
+              {lineupSections.map((section) => (
+                <button
+                  key={section.key}
+                  type="button"
+                  className={activeLineupSection.key === section.key ? 'active' : ''}
+                  onClick={() => (isLsp ? switchLspVariante(section.varianteId) : setLineupTab(section.key))}
+                >
+                  {section.label}
+                </button>
+              ))}
             </div>
+
+            {isLsp && (
+              <div className="info-banner">
+                {activeLineupSection.label} · {lspVariante.staerke} Funktionen nach FwDV 3.
+                Brusttücher: Schnelligkeitsübung {lspVariante.brusttuecherSchnelligkeit}, Kugelstoßen und Staffellauf {lspVariante.brusttuecherSport}.
+              </div>
+            )}
+
+            {isLsp && (
+              <button type="button" className="secondary-btn full-width-btn" onClick={applyATeilToLspSection}>
+                <Users size={15} /> Aufstellung aus A-Teil übernehmen
+              </button>
+            )}
 
             {swapSourceId ? (
               <div className="info-banner warning">Tausch aktiv. Tippe jetzt eine zweite Position an.</div>
@@ -1209,8 +1558,8 @@ function App({ isDemo = false }) {
               {currentPositions.map((position) => {
                 const assignedMemberId = appState.lineups.assignments[position.id];
                 const assignedMember = assignedMemberId ? memberMap[assignedMemberId] : null;
-                const isL7 = lineupTab === 'B' && position.id === 'b-laeufer-7';
-                const isTeamMember = lineupTab === 'B' && (position.id === 'b-laeufer-7' || position.id === 'b-laeufer-8');
+                const isL7 = activeLineupSection.key === 'B' && position.id === 'b-laeufer-7';
+                const isTeamMember = activeLineupSection.key === 'B' && (position.id === 'b-laeufer-7' || position.id === 'b-laeufer-8');
                 return (
                   <Fragment key={position.id}>
                     {isL7 && <div className="position-section-label">Team-Aufgabe</div>}
@@ -1311,61 +1660,149 @@ function App({ isDemo = false }) {
           <section className="tab-screen">
             <div className="section-head">
               <h2>Stoppuhr</h2>
-              <div className="segmented-compact">
-                <button
-                  type="button"
-                  className={activeStopwatchMode === 'a' ? 'active' : ''}
-                  onClick={() => switchStopwatchMode('a')}
-                  aria-pressed={activeStopwatchMode === 'a'}
-                  aria-label={`A-Teil${appState.stopwatchDrafts.a.isRunning ? ' (läuft)' : ''}`}
-                >
-                  A{appState.stopwatchDrafts.a.isRunning && <span className="running-dot" aria-hidden="true" />}
-                </button>
-                <button
-                  type="button"
-                  className={activeStopwatchMode === 'b' ? 'active' : ''}
-                  onClick={() => switchStopwatchMode('b')}
-                  aria-pressed={activeStopwatchMode === 'b'}
-                  aria-label={`B-Teil${appState.stopwatchDrafts.b.isRunning ? ' (läuft)' : ''}`}
-                >
-                  B{appState.stopwatchDrafts.b.isRunning && <span className="running-dot" aria-hidden="true" />}
-                </button>
-              </div>
-            </div>
-
-            <article className="surface-card timer-display-card">
-              <p className="timer-title">{stopwatchDraft.mode === 'a' ? 'A-Teil Lauf' : 'B-Teil Lauf'}</p>
-              <div className="timer-value" role="timer" aria-label={`Laufzeit ${formatDuration(elapsedMs)}`}>{formatDuration(elapsedMs)}</div>
-              {stopwatchDraft.mode === 'a' && (
-                <div className="knot-status-band">
-                  <span>Knotenzeit</span>
-                  <strong>{liveKnotDurationMs !== null ? formatDuration(liveKnotDurationMs) : '--:--,-'}</strong>
-                  {stopwatchDraft.knotStartElapsedMs !== null && stopwatchDraft.isRunning && <em>läuft</em>}
+              {!isLsp && (
+                <div className="segmented-compact">
+                  {competitionModes.map((mode) => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      className={activeMode === mode.id ? 'active' : ''}
+                      onClick={() => switchStopwatchMode(mode.id)}
+                      aria-pressed={activeMode === mode.id}
+                      aria-label={`${mode.label}${appState.stopwatchDrafts[mode.id].isRunning ? ' (läuft)' : ''}`}
+                    >
+                      {mode.shortLabel}
+                      {appState.stopwatchDrafts[mode.id].isRunning && <span className="running-dot" aria-hidden="true" />}
+                    </button>
+                  ))}
                 </div>
               )}
-            </article>
+            </div>
 
-            {otherStopwatchDraft.isRunning && (
+            {isLsp && (
+              <div className="disziplin-bar" role="group" aria-label="Disziplin wählen">
+                {competitionModes.map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    className={activeMode === mode.id ? 'active' : ''}
+                    onClick={() => switchStopwatchMode(mode.id)}
+                    aria-pressed={activeMode === mode.id}
+                  >
+                    {mode.shortLabel}
+                    {appState.stopwatchDrafts[mode.id].isRunning && <span className="running-dot" aria-hidden="true" />}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {isLsp && activeDisziplin && (
+              <article className="surface-card stacked-card lsp-disziplin-card">
+                <div className="card-head align-start">
+                  <div>
+                    <span className="category-label">{lspVariante.label} · Leistungsspange</span>
+                    <h3>{activeDisziplin.label}</h3>
+                  </div>
+                  <span className={`lsp-points-badge ${lspLiveErgebnis?.punkte === null ? 'empty' : ''} ${lspLiveErgebnis?.nullwertung ? 'zero' : ''}`}>
+                    {lspLiveErgebnis?.punkte === null ? '–' : `${lspLiveErgebnis.punkte} P.`}
+                  </span>
+                </div>
+                <p className="rule-summary">{activeDisziplin.kurz}</p>
+                {lspNaechsteStufe && (
+                  <p className="lsp-next-step">
+                    {lspNaechsteStufe.bisSekunden !== undefined
+                      ? `${lspNaechsteStufe.punkte} Punkte ab ${formatLspSekunden(lspNaechsteStufe.bisSekunden)} oder schneller.`
+                      : `${lspNaechsteStufe.punkte} Punkte ab ${formatMeter(lspNaechsteStufe.abCm)}.`}
+                  </p>
+                )}
+                {lspLiveErgebnis?.gruende.length > 0 && (
+                  <p className="lsp-next-step warning">Nullwertung: {lspLiveErgebnis.gruende.join(' · ')}</p>
+                )}
+              </article>
+            )}
+
+            {activeModeInfo.kind === 'timed' && (
+              <article className="surface-card timer-display-card">
+                <p className="timer-title">{isLsp ? activeDisziplin.label : `${activeModeInfo.label} Lauf`}</p>
+                <div className="timer-value" role="timer" aria-label={`Laufzeit ${formatDuration(elapsedMs)}`}>{formatDuration(elapsedMs)}</div>
+                {activeModeInfo.hasKnotTimer && (
+                  <div className="knot-status-band">
+                    <span>Knotenzeit</span>
+                    <strong>{liveKnotDurationMs !== null ? formatDuration(liveKnotDurationMs) : '--:--,-'}</strong>
+                    {stopwatchDraft.knotStartElapsedMs !== null && stopwatchDraft.isRunning && <em>läuft</em>}
+                  </div>
+                )}
+              </article>
+            )}
+
+            {otherRunningMode && (
               <button
                 type="button"
                 className="parallel-run-hint"
-                onClick={() => switchStopwatchMode(otherStopwatchMode)}
+                onClick={() => switchStopwatchMode(otherRunningMode.id)}
               >
                 <span className="running-dot" aria-hidden="true" />
-                {otherStopwatchMode === 'a' ? 'A-Teil' : 'B-Teil'} läuft parallel
+                {otherRunningMode.label} läuft parallel
                 <strong>{formatDuration(otherElapsedMs)}</strong>
               </button>
             )}
 
+            {activeModeInfo.kind === 'measured' && (
+              <article className="surface-card stacked-card">
+                <h3><Ruler size={16} /> Gesamtweite</h3>
+                <label className="target-time-row">
+                  <span>Summe aller {lspVariante.staerke} Stöße (m)</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder={`mind. ${formatMeter(lspVariante.kugelMindestCm)}`}
+                    value={measuredInput}
+                    onChange={(event) => handleMeasuredInput(event.target.value)}
+                    aria-label="Gesamtweite in Metern"
+                  />
+                </label>
+                <p className="settings-hint">
+                  Mindestweite {formatMeter(lspVariante.kugelMindestCm)} — darunter gibt es 0 Punkte.
+                </p>
+              </article>
+            )}
+
+            {activeModeInfo.kind === 'judged' && (
+              <article className="surface-card stacked-card">
+                <h3><ClipboardList size={16} /> Bewertung der Einheit</h3>
+                <div className="lsp-scale-picker" role="group" aria-label="Punktzahl wählen">
+                  {LSP_GESAMTEINDRUCK_SKALA.map((stufe) => (
+                    <button
+                      key={stufe.punkte}
+                      type="button"
+                      className={stopwatchDraft.judgePoints === stufe.punkte ? 'active' : ''}
+                      aria-pressed={stopwatchDraft.judgePoints === stufe.punkte}
+                      onClick={() => setJudgePoints(stufe.punkte)}
+                    >
+                      <strong>{stufe.punkte}</strong>
+                      <span>{stufe.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </article>
+            )}
+
             <div className="timer-actions-grid">
-              <button
-                type="button"
-                className={`huge-action ${stopwatchDraft.isRunning ? 'stop' : 'start'}`}
-                onClick={toggleTimer}
-                disabled={isTimerControlledByOther}
-              >
-                {stopwatchDraft.isRunning ? 'STOPP' : 'START'}
-              </button>
+              {activeModeInfo.kind === 'timed' ? (
+                <button
+                  type="button"
+                  className={`huge-action ${stopwatchDraft.isRunning ? 'stop' : 'start'}`}
+                  onClick={toggleTimer}
+                  disabled={isTimerControlledByOther}
+                >
+                  {stopwatchDraft.isRunning ? 'STOPP' : 'START'}
+                </button>
+              ) : (
+                <div className="lsp-result-preview" aria-live="polite">
+                  <strong>{lspLiveErgebnis?.punkte === null ? '–' : lspLiveErgebnis.punkte}</strong>
+                  <span>von 4 Punkten</span>
+                </div>
+              )}
               <div className="secondary-actions">
                 <button type="button" className="secondary-action" onClick={requestResetTimer} disabled={isTimerControlledByOther}>
                   <RotateCcw size={16} /> Reset
@@ -1374,7 +1811,7 @@ function App({ isDemo = false }) {
                   type="button"
                   className="secondary-action save"
                   onClick={saveRun}
-                  disabled={elapsedMs === 0 || stopwatchDraft.isRunning || isTimerControlledByOther}
+                  disabled={!canSaveRun}
                 >
                   <Save size={16} /> Speichern
                 </button>
@@ -1388,14 +1825,43 @@ function App({ isDemo = false }) {
               </div>
             )}
 
-            <article className="surface-card stacked-card">
-              <h3>{stopwatchDraft.mode === 'a' ? 'Zwischenzeiten' : 'Sonderaufgaben B-Teil'}</h3>
+            {isLsp && activeDisziplin && (
+              <article className="surface-card stacked-card">
+                <h3>Nullwertung</h3>
+                <div className="lsp-nullwertung-list">
+                  {activeDisziplin.nullwertungen.map((nullwertung) => {
+                    const isActive = stopwatchDraft.nullwertungIds?.includes(nullwertung.id);
+                    return (
+                      <button
+                        key={nullwertung.id}
+                        type="button"
+                        className={`lsp-nullwertung-row ${isActive ? 'active' : ''}`}
+                        aria-pressed={isActive}
+                        onClick={() => toggleNullwertung(nullwertung.id)}
+                      >
+                        {isActive ? <XCircle size={16} /> : <CircleDashed size={16} />}
+                        <span>{nullwertung.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <ul className="detail-list">
+                  {activeDisziplin.hinweise.map((hinweis) => (
+                    <li key={hinweis}>{hinweis}</li>
+                  ))}
+                </ul>
+              </article>
+            )}
 
-              <div className={`split-button-grid ${stopwatchDraft.mode === 'b' ? 'b-part' : ''}`}>
+            {markerButtons.length > 0 && (
+            <article className="surface-card stacked-card">
+              <h3>{activeModeInfo.markersAreTasks ? 'Sonderaufgaben B-Teil' : 'Zwischenzeiten'}</h3>
+
+              <div className={`split-button-grid ${activeModeInfo.markersAreTasks ? 'b-part' : ''}`}>
                 {markerButtons.map((button) => {
                   const Icon = button.icon;
 
-                  if (stopwatchDraft.mode === 'b') {
+                  if (activeModeInfo.markersAreTasks) {
                     const taskTimer = stopwatchDraft.taskTimers?.[button.label];
                     const isTaskRunning = Boolean(taskTimer && taskTimer.endElapsedMs === null);
                     const isTaskDone = Boolean(taskTimer && taskTimer.endElapsedMs !== null);
@@ -1439,7 +1905,7 @@ function App({ isDemo = false }) {
               </div>
 
               <div className="split-list">
-                {stopwatchDraft.mode === 'b' ? (
+                {activeModeInfo.markersAreTasks ? (
                   Object.entries(stopwatchDraft.taskTimers ?? {}).filter(([, t]) => t && t.endElapsedMs !== null).length === 0
                     ? <p className="empty-copy">Tippe auf einen Button um die Aufgabe zu stoppen.</p>
                     : Object.entries(stopwatchDraft.taskTimers ?? {})
@@ -1491,6 +1957,7 @@ function App({ isDemo = false }) {
                 )}
               </div>
             </article>
+            )}
 
             <article className="surface-card stacked-card">
               <h3>Notizen zum Lauf</h3>
@@ -1504,6 +1971,7 @@ function App({ isDemo = false }) {
               />
             </article>
 
+            {!isLsp && (
             <article className="surface-card stacked-card scoring-card">
               <div className="scoring-head">
                 <h3><Award size={16} /> Wettkampf-Wertung</h3>
@@ -1642,6 +2110,78 @@ function App({ isDemo = false }) {
                 </>
               )}
             </article>
+            )}
+
+            {activeMode === 'lsp-loeschangriff' && (
+              <article className="surface-card stacked-card">
+                <div className="scoring-head">
+                  <h3><Award size={16} /> Beobachtungshilfe</h3>
+                  <button
+                    type="button"
+                    className="chip-action"
+                    onClick={() => setShowLoeschangriffHilfe((current) => !current)}
+                    aria-expanded={showLoeschangriffHilfe}
+                  >
+                    {showLoeschangriffHilfe ? 'Ausblenden' : 'Anzeigen'}
+                  </button>
+                </div>
+                <p className="settings-hint">
+                  Die Durchführungsbestimmungen verweisen für den Löschangriff auf die Wettbewerbsordnung des
+                  Bundeswettbewerbs, Kapitel 4, unter Weglassen der Hindernisse. Die Häkchen zählen nicht in
+                  die Punktzahl — sie landen im gespeicherten Lauf als Gesprächsgrundlage fürs Debriefing.
+                </p>
+
+                {showLoeschangriffHilfe && (
+                  <div className="fehler-groups">
+                    {loeschangriffGroups.map((group) => {
+                      const isOpen = expandedFehlerGroup === group.id;
+                      return (
+                        <div key={group.id} className="fehler-group">
+                          <button
+                            type="button"
+                            className={`fehler-group-head ${isOpen ? 'open' : ''}`}
+                            onClick={() => setExpandedFehlerGroup((current) => (current === group.id ? null : group.id))}
+                          >
+                            <span>{group.title}</span>
+                            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                          {isOpen && (
+                            <div className="fehler-list">
+                              {group.errors.map((entry) => {
+                                const isMarked = (stopwatchDraft.fehlerCounts?.[entry.id] ?? 0) > 0;
+                                return (
+                                  <button
+                                    key={entry.id}
+                                    type="button"
+                                    className={`lsp-nullwertung-row ${isMarked ? 'active' : ''}`}
+                                    aria-pressed={isMarked}
+                                    onClick={() => (isMarked ? removeFehler(entry.id) : addFehler(entry.id))}
+                                  >
+                                    {isMarked ? <CheckCircle2 size={16} /> : <CircleDashed size={16} />}
+                                    <span>{entry.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {lspBeobachtungen.length > 0 && (
+                  <div className="recorded-fehler">
+                    <div className="scoring-subhead">Notiert · {lspBeobachtungen.length}</div>
+                    {lspBeobachtungen.map((label) => (
+                      <div key={label} className="recorded-row">
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </article>
+            )}
           </section>
         )}
 
@@ -1662,25 +2202,110 @@ function App({ isDemo = false }) {
 
             {analysisView === 'history' ? (
               <div className="history-stack">
+                {isLsp && (
+                  <article className="surface-card stacked-card lsp-wertungsbogen">
+                    <div className="card-head align-start">
+                      <div>
+                        <span className="category-label">{lspVariante.label} · zuletzt gespeicherter Lauf je Disziplin</span>
+                        <h3>Wertungsbogen</h3>
+                      </div>
+                      <ClipboardList size={18} />
+                    </div>
+
+                    <div className="lsp-bogen-list">
+                      {competitionModes.map((mode) => {
+                        const run = lspLetzteLaeufe[mode.id];
+                        const punkte = run?.lsp?.punkte ?? null;
+                        return (
+                          <div key={mode.id} className="lsp-bogen-row">
+                            <span>{mode.label}</span>
+                            <strong className={punkte === 0 ? 'zero' : ''}>{punkte === null ? '–' : `${punkte} P.`}</strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="scoring-subhead">Gesamteindruck je Wertungsrichter/-in</div>
+                    <div className="lsp-gesamteindruck-list">
+                      {LSP_WERTUNGSRICHTER.map((label, index) => (
+                        <div key={label} className="lsp-gesamteindruck-row">
+                          <span>{label}</span>
+                          <div className="lsp-scale-picker compact" role="group" aria-label={`${label}: Gesamteindruck`}>
+                            {LSP_GESAMTEINDRUCK_SKALA.map((stufe) => {
+                              const isActive = appState.lsp?.gesamteindruck?.[index] === stufe.punkte;
+                              return (
+                                <button
+                                  key={stufe.punkte}
+                                  type="button"
+                                  className={isActive ? 'active' : ''}
+                                  aria-pressed={isActive}
+                                  aria-label={`${stufe.punkte} — ${stufe.label}`}
+                                  title={stufe.label}
+                                  onClick={() => setGesamteindruck(index, stufe.punkte)}
+                                >
+                                  {stufe.punkte}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="lsp-bogen-total">
+                      <div>
+                        <span>Übungen</span>
+                        <strong>{lspGesamt.uebungsSumme}</strong>
+                      </div>
+                      <div>
+                        <span>Ø Gesamteindruck</span>
+                        <strong>{lspGesamt.gesamteindruckDurchschnitt === null ? '–' : String(lspGesamt.gesamteindruckDurchschnitt).replace('.', ',')}</strong>
+                      </div>
+                      <div className="emphasis">
+                        <span>Gesamt</span>
+                        <strong>{String(lspGesamt.summe).replace('.', ',')}</strong>
+                      </div>
+                    </div>
+
+                    {lspGesamt.ausgeschieden ? (
+                      <div className="info-banner warning">
+                        <strong>Ausgeschieden.</strong> {lspGesamt.ausscheidegruende.join(' ')}
+                      </div>
+                    ) : lspGesamt.bestanden ? (
+                      <div className="info-banner success">
+                        <strong>Bestanden.</strong> Mindestens {LSP_MINDESTPUNKTE} Punkte erreicht, keine 0-Wertung.
+                      </div>
+                    ) : (
+                      <div className="info-banner">
+                        {lspGesamt.wiederholungMoeglich
+                          ? 'Eine 0-Wertung in einer wiederholbaren Disziplin — bei 10 Gesamtpunkten ist eine Wiederholung nach den übrigen Disziplinen möglich.'
+                          : `Noch unvollständig: mindestens ${LSP_MINDESTPUNKTE} Punkte aus fünf Disziplinen plus Gesamteindruck sind nötig.`}
+                      </div>
+                    )}
+                  </article>
+                )}
+
                 {runs.length > 0 && (() => {
-                  const aRuns = runs.filter((r) => r.mode === 'a');
-                  const bRuns = runs.filter((r) => r.mode === 'b');
+                  const timedModes = competitionModes.filter((mode) => mode.kind === 'timed');
                   const avg = (arr) => arr.length === 0 ? null : Math.round(arr.reduce((s, r) => s + r.totalMs, 0) / arr.length);
                   const best = (arr) => arr.length === 0 ? null : Math.min(...arr.map((r) => r.totalMs));
                   return (
                     <article className="surface-card stacked-card stats-summary-card">
                       <h3>Übersicht</h3>
                       <div className="stats-grid">
-                        {aRuns.length > 0 && <>
-                          <div className="stats-cell"><span>A-Teil Läufe</span><strong>{aRuns.length}</strong></div>
-                          <div className="stats-cell"><span>Ø A-Teil</span><strong>{formatDuration(avg(aRuns))}</strong></div>
-                          <div className="stats-cell"><span>Beste A-Zeit</span><strong>{formatDuration(best(aRuns))}</strong></div>
-                        </>}
-                        {bRuns.length > 0 && <>
-                          <div className="stats-cell"><span>B-Teil Läufe</span><strong>{bRuns.length}</strong></div>
-                          <div className="stats-cell"><span>Ø B-Teil</span><strong>{formatDuration(avg(bRuns))}</strong></div>
-                          <div className="stats-cell"><span>Beste B-Zeit</span><strong>{formatDuration(best(bRuns))}</strong></div>
-                        </>}
+                        {timedModes.map((mode) => {
+                          const modeRuns = runs.filter((run) => run.mode === mode.id && run.totalMs > 0);
+                          if (modeRuns.length === 0) {
+                            return null;
+                          }
+                          return (
+                            <Fragment key={mode.id}>
+                              <div className="stats-cell"><span>{mode.label} Läufe</span><strong>{modeRuns.length}</strong></div>
+                              <div className="stats-cell"><span>Ø {mode.shortLabel}</span><strong>{formatDuration(avg(modeRuns))}</strong></div>
+                              <div className="stats-cell"><span>Beste {mode.shortLabel}</span><strong>{formatDuration(best(modeRuns))}</strong></div>
+                            </Fragment>
+                          );
+                        })}
                       </div>
                       <button type="button" className="secondary-btn" onClick={exportTrainingLogCSV}>
                         <Download size={15} /> Protokoll als CSV exportieren
@@ -1688,8 +2313,14 @@ function App({ isDemo = false }) {
                     </article>
                   );
                 })()}
-                {runs.length === 0 && <p className="empty-copy large">Noch keine Trainingsläufe gespeichert.</p>}
-                {runs.map((run) => {
+                {visibleRuns.length === 0 && (
+                  <p className="empty-copy large">
+                    {runs.length === 0
+                      ? 'Noch keine Trainingsläufe gespeichert.'
+                      : `Für ${isLsp ? 'die Leistungsspange' : 'den Bundeswettbewerb'} noch keine Läufe — die übrigen findest du im anderen Wettbewerb.`}
+                  </p>
+                )}
+                {visibleRuns.map((run) => {
                   const isExpanded = expandedRunId === run.id;
                   return (
                     <article key={run.id} className="surface-card history-card history-accordion-card">
@@ -1699,12 +2330,19 @@ function App({ isDemo = false }) {
                         onClick={() => setExpandedRunId((current) => (current === run.id ? null : run.id))}
                       >
                         <div className="history-summary-left">
-                          <span className={`mode-pill ${run.mode === 'a' ? 'a' : 'b'}`}>{run.mode === 'a' ? 'A-Teil' : 'B-Teil'}</span>
+                          <span className={`mode-pill ${run.mode === 'a' ? 'a' : 'b'}`}>{getModeLabel(run.mode)}</span>
                           <p>{DATE_FORMATTER.format(new Date(run.createdAt))}</p>
                         </div>
                         <div className="history-summary-right">
                           {run.scoring && <span className="score-pill">{run.scoring.total} P.</span>}
-                          <strong>{formatDuration(run.totalMs)}</strong>
+                          {run.lsp && <span className={`score-pill ${run.lsp.punkte === 0 ? 'zero' : ''}`}>{run.lsp.punkte} P.</span>}
+                          <strong>
+                            {run.lsp && run.lsp.basis?.art === 'weite'
+                              ? formatMeter(run.lsp.basis.zentimeter)
+                              : run.totalMs > 0
+                              ? formatDuration(run.totalMs)
+                              : '—'}
+                          </strong>
                           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                         </div>
                       </button>
@@ -1737,6 +2375,26 @@ function App({ isDemo = false }) {
                             <div className="split-row emphasis-row compact-top">
                               <span>Knotenzeit gesamt</span>
                               <strong>{formatDuration(run.knotDurationMs)}</strong>
+                            </div>
+                          )}
+                          {run.lsp && (
+                            <div className="history-scoring">
+                              <div className="score-line">
+                                <span>Wertung {getLspVariante(run.lsp.variante).label}</span>
+                                <strong>{run.lsp.punkte} / 4 P.</strong>
+                              </div>
+                              {run.lsp.gruende?.length > 0 && (
+                                <div className="score-sub">Nullwertung: {run.lsp.gruende.join(' · ')}</div>
+                              )}
+                              {run.lsp.beobachtungen?.length > 0 && (
+                                <div className="split-list compact">
+                                  {run.lsp.beobachtungen.map((label) => (
+                                    <div key={label} className="split-row">
+                                      <span>{label}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                           {run.scoring && (
@@ -1815,15 +2473,14 @@ function App({ isDemo = false }) {
                     <thead>
                       <tr>
                         <th>Name</th>
-                        {A_PART_POSITIONS.map((position) => <th key={position.id}>{position.shortLabel}</th>)}
-                        {B_PART_POSITIONS.map((position) => <th key={position.id}>{position.shortLabel}</th>)}
+                        {matrixPositions.map((position) => <th key={position.id}>{position.shortLabel}</th>)}
                       </tr>
                     </thead>
                     <tbody>
                       {appState.members.map((member) => (
                         <tr key={member.id}>
                           <th>{member.name}</th>
-                          {ALL_POSITIONS.map((position) => {
+                          {matrixPositions.map((position) => {
                             const count = matrix[member.id]?.[position.id] ?? 0;
                             const opacity = count === 0 ? 0 : Math.max(0.2, count / maxMatrixCount);
                             return (
@@ -1861,18 +2518,19 @@ function App({ isDemo = false }) {
             </label>
 
             <div className="segmented-bar knowledge-tabs">
-              <button type="button" className={knowledgeView === 'rules' ? 'active' : ''} onClick={() => setKnowledgeView('rules')}>
-                Regeln
-              </button>
-              <button type="button" className={knowledgeView === 'positions' ? 'active' : ''} onClick={() => setKnowledgeView('positions')}>
-                Positionen
-              </button>
-              <button type="button" className={knowledgeView === 'knots' ? 'active' : ''} onClick={() => setKnowledgeView('knots')}>
-                Knoten
-              </button>
+              {knowledgeViews.map((view) => (
+                <button
+                  key={view.key}
+                  type="button"
+                  className={activeKnowledgeView === view.key ? 'active' : ''}
+                  onClick={() => setKnowledgeView(view.key)}
+                >
+                  {view.label}
+                </button>
+              ))}
             </div>
 
-            {knowledgeView === 'rules' && (
+            {activeKnowledgeView === 'rules' && (
               <div className="knowledge-stack">
                 {filteredRules.map((rule) => (
                   <article key={rule.id} className="surface-card rule-card">
@@ -1894,15 +2552,19 @@ function App({ isDemo = false }) {
               </div>
             )}
 
-            {knowledgeView === 'positions' && (
+            {activeKnowledgeView === 'positions' && (
               <div className="knowledge-stack">
                 <div className="segmented-bar">
-                  <button type="button" className={positionKnowledgeTab === 'A' ? 'active' : ''} onClick={() => setPositionKnowledgeTab('A')}>
-                    A-Teil
-                  </button>
-                  <button type="button" className={positionKnowledgeTab === 'B' ? 'active' : ''} onClick={() => setPositionKnowledgeTab('B')}>
-                    B-Teil
-                  </button>
+                  {lineupSections.map((section) => (
+                    <button
+                      key={section.key}
+                      type="button"
+                      className={activeKnowledgeSection.key === section.key ? 'active' : ''}
+                      onClick={() => (isLsp ? switchLspVariante(section.varianteId) : setPositionKnowledgeTab(section.key))}
+                    >
+                      {section.label}
+                    </button>
+                  ))}
                 </div>
                 {filteredGuides.map((guide) => {
                   const isExpanded = expandedGuideId === guide.id;
@@ -1944,7 +2606,43 @@ function App({ isDemo = false }) {
               </div>
             )}
 
-            {knowledgeView === 'knots' && (
+            {activeKnowledgeView === 'fragen' && (
+              <div className="knowledge-stack">
+                <div className="info-banner">{LSP_FRAGEN_HINWEIS}</div>
+                {LSP_FRAGEN_GEBIETE.map((gebiet) => {
+                  const isExpanded = expandedGebietId === gebiet.id;
+                  return (
+                    <article key={gebiet.id} className="surface-card guide-accordion-card">
+                      <button
+                        type="button"
+                        className={`guide-accordion-trigger ${isExpanded ? 'expanded' : ''}`}
+                        onClick={() => setExpandedGebietId((current) => (current === gebiet.id ? null : gebiet.id))}
+                      >
+                        <div>
+                          <span className="category-label">Wissensgebiet</span>
+                          <h3>{gebiet.label}</h3>
+                        </div>
+                        {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                      </button>
+                      {isExpanded && (
+                        <div className="guide-accordion-content">
+                          <div className="detail-block">
+                            <h4>Worüber ihr sprechen solltet</h4>
+                            <ul className="detail-list">
+                              {gebiet.impulse.map((impuls) => (
+                                <li key={impuls}>{impuls}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeKnowledgeView === 'knots' && (
               <div className="knowledge-stack">
                 {filteredKnots.map((knot) => (
                   <article key={knot.id} className="surface-card knot-card">
@@ -2076,6 +2774,42 @@ function App({ isDemo = false }) {
                   : 'Nicht verbunden'}
               </span>
             </div>
+
+            <div className="settings-row">
+              <span className="settings-label">Wettbewerb</span>
+              <div className="segmented-compact" role="group" aria-label="Wettbewerb wählen">
+                {COMPETITIONS.map((competition) => (
+                  <button
+                    key={competition.id}
+                    type="button"
+                    className={activeCompetition === competition.id ? 'active' : ''}
+                    aria-pressed={activeCompetition === competition.id}
+                    onClick={() => switchCompetition(competition.id)}
+                  >
+                    {competition.shortLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {isLsp && (
+              <div className="settings-row">
+                <span className="settings-label">Wettbewerbsform</span>
+                <div className="segmented-compact" role="group" aria-label="Wettbewerbsform wählen">
+                  {LINEUP_SECTIONS.lsp.map((section) => (
+                    <button
+                      key={section.key}
+                      type="button"
+                      className={lspVariante.id === section.varianteId ? 'active' : ''}
+                      aria-pressed={lspVariante.id === section.varianteId}
+                      onClick={() => switchLspVariante(section.varianteId)}
+                    >
+                      {section.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="settings-row">
               <span className="settings-label">Darstellung</span>

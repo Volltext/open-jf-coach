@@ -2040,3 +2040,253 @@ textarea:focus-visible {
   padding: 0.25rem;
   display: inline-flex;
 }
+
+/* --- Leistungsspange ---------------------------------------------------
+   Ergänzt den bestehenden Bundeswettbewerbs-Bildschirm; alle Farben und Radien
+   kommen aus den vorhandenen Tokens. */
+
+/* Wettbewerbs-Umschalter über allen vier Tabs. Der rechte Innenabstand hält die
+   schwebende Topbar (Sync-Punkt + Zahnrad) frei. */
+.competition-bar {
+  padding-right: 3.75rem;
+}
+
+.competition-bar .segmented-bar {
+  padding: 0.25rem;
+}
+
+.competition-bar .segmented-bar button {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+/* Disziplin-Auswahl der Leistungsspange: fünf Einträge passen nicht in ein
+   Segment-Raster, deshalb eine horizontal scrollbare Chip-Leiste. */
+.disziplin-bar {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.3rem;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  scrollbar-width: none;
+}
+
+.disziplin-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.disziplin-bar button {
+  flex: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  padding: 0.55rem 0.85rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.disziplin-bar .active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.lsp-points-badge {
+  flex: none;
+  border-radius: var(--r-pill);
+  padding: 0.25rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--text-success);
+}
+
+.lsp-points-badge.empty {
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.lsp-points-badge.zero {
+  background: rgba(220, 38, 38, 0.2);
+  color: var(--text-danger);
+}
+
+.lsp-next-step {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.lsp-next-step.warning {
+  color: var(--text-danger);
+}
+
+/* Punkteskala 0–4 für Löschangriff, Fragenbeantwortung und Gesamteindruck. */
+.lsp-scale-picker {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35rem;
+}
+
+.lsp-scale-picker button {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.3rem;
+  border-radius: var(--r-sm);
+  background: var(--surface-muted);
+  color: var(--muted);
+  text-align: center;
+}
+
+.lsp-scale-picker button strong {
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.lsp-scale-picker button span {
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.lsp-scale-picker .active,
+.lsp-scale-picker .active strong {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.lsp-scale-picker.compact button {
+  padding: 0.35rem 0.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Abhakbare Nullwertungsgründe und Beobachtungshilfe. */
+.lsp-nullwertung-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lsp-nullwertung-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--r-sm);
+  background: var(--surface-muted);
+  color: var(--muted);
+  text-align: left;
+  line-height: 1.35;
+}
+
+.lsp-nullwertung-row svg {
+  flex: none;
+}
+
+.lsp-nullwertung-row.active {
+  background: rgba(220, 38, 38, 0.16);
+  color: var(--text-danger);
+}
+
+/* Punktevorschau anstelle des START-Buttons bei nicht gestoppten Disziplinen. */
+.lsp-result-preview {
+  display: grid;
+  place-content: center;
+  gap: 0.15rem;
+  text-align: center;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1rem;
+}
+
+.lsp-result-preview strong {
+  font-size: 2.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.lsp-result-preview span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Wertungsbogen im Analyse-Tab. */
+.lsp-bogen-list,
+.lsp-gesamteindruck-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lsp-bogen-row,
+.lsp-gesamteindruck-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--r-sm);
+  background: var(--surface-muted);
+}
+
+.lsp-bogen-row strong,
+.lsp-bogen-total strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.lsp-bogen-row strong.zero {
+  color: var(--text-danger);
+}
+
+.lsp-gesamteindruck-row span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.lsp-gesamteindruck-row .lsp-scale-picker {
+  flex: none;
+  grid-template-columns: repeat(5, 2rem);
+}
+
+.lsp-bogen-total {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.lsp-bogen-total div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: var(--r-sm);
+  background: var(--surface-muted);
+  text-align: center;
+}
+
+.lsp-bogen-total span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.lsp-bogen-total strong {
+  font-size: 1.15rem;
+}
+
+.lsp-bogen-total .emphasis {
+  background: rgba(var(--accent-rgb), 0.18);
+}
+
+.info-banner.success {
+  color: var(--text-success);
+}
+
+.score-pill.zero {
+  background: rgba(220, 38, 38, 0.25);
+  color: var(--text-danger);
+}
