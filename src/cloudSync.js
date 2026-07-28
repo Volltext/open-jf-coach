@@ -8,6 +8,7 @@
 // gewohnte Schnittstelle { pushState, dispose } zurück.
 
 import { resolveBackendConfig } from './backendConfig';
+import { STOPWATCH_MODE_IDS } from './competitions';
 
 function isMeaningfulArray(value) {
   return Array.isArray(value);
@@ -36,10 +37,10 @@ export function extractSyncStateFromApp(appState) {
     lineups: appState.lineups,
     trainingLog: appState.trainingLog,
     deletedRuns: appState.deletedRuns ?? {},
-    stopwatchDrafts: {
-      a: serialiseDraft(drafts.a),
-      b: serialiseDraft(drafts.b)
-    }
+    lsp: appState.lsp,
+    stopwatchDrafts: Object.fromEntries(
+      STOPWATCH_MODE_IDS.map((mode) => [mode, serialiseDraft(drafts[mode])])
+    )
   };
 }
 
@@ -116,6 +117,43 @@ export function pickRemoteDraft(remoteData, mode) {
   return null;
 }
 
+// Den Gesamteindruck bewerten fünf Wertungsrichter/-innen an fünf Geräten. Deshalb
+// wird feldweise zusammengeführt: eine noch offene Wertung (null) von der Gegenseite
+// löscht niemals eine bereits gesetzte. Nur wenn beide Seiten einen Wert haben,
+// gewinnt der eingehende — dieselbe Regel wie bei der Aufstellung.
+export function mergeGesamteindruck(currentWerte, remoteWerte) {
+  const current = Array.isArray(currentWerte) ? currentWerte : [];
+  if (!Array.isArray(remoteWerte)) {
+    return current;
+  }
+
+  let changed = false;
+  const merged = current.map((wert, index) => {
+    const remote = remoteWerte[index];
+    if (typeof remote !== 'number' || remote === wert) {
+      return wert;
+    }
+    changed = true;
+    return remote;
+  });
+
+  return changed ? merged : current;
+}
+
+function mergeLsp(currentLsp, remoteLsp) {
+  if (!isMeaningfulObject(remoteLsp)) {
+    return currentLsp;
+  }
+
+  const gesamteindruck = mergeGesamteindruck(currentLsp?.gesamteindruck, remoteLsp.gesamteindruck);
+  const variante = typeof remoteLsp.variante === 'string' ? remoteLsp.variante : currentLsp?.variante;
+
+  if (gesamteindruck === currentLsp?.gesamteindruck && variante === currentLsp?.variante) {
+    return currentLsp;
+  }
+  return { ...currentLsp, variante, gesamteindruck };
+}
+
 // `reanchorDraft` darf einen frisch übernommenen, laufenden Draft auf die eigene
 // Uhr umrechnen (Date.now lebt in App.jsx, damit diese Funktion rein bleibt).
 //
@@ -146,10 +184,10 @@ export function mergeRemoteStateIntoApp(currentState, remoteData, reanchorDraft 
     lineups: isMeaningfulObject(remoteData.lineups) ? remoteData.lineups : currentState.lineups,
     trainingLog,
     deletedRuns,
-    stopwatchDrafts: {
-      a: mergeDraft('a'),
-      b: mergeDraft('b')
-    }
+    lsp: mergeLsp(currentState.lsp, remoteData.lsp),
+    stopwatchDrafts: Object.fromEntries(
+      STOPWATCH_MODE_IDS.map((mode) => [mode, mergeDraft(mode)])
+    )
   };
 }
 

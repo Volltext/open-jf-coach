@@ -43,6 +43,7 @@ Von der Aufstellung bis zur Nachbesprechung — open-JF-Coach begleitet euch dur
 
 | | Feature | Beschreibung |
 |---|---|---|
+| 🏅 | **Zwei Wettbewerbe** | Umschalten zwischen **Bundeswettbewerb** (A-/B-Teil) und **Leistungsspange** (alle fünf Disziplinen, Gruppe oder Staffel) — die ganze App stellt sich mit um. |
 | 👥 | **Aufstellung & Rollen** | Mitglieder verwalten und für A-Teil sowie B-Teil die Positionen (GF, ATF, WTF …) gezielt planen und zuweisen. |
 | ⏱️ | **Stoppuhr & Zeitmessung** | Exakte Timer für Übungsläufe, Knotentraining und Staffelstrecken — direkt auf dem Smartphone, auch offline. |
 | 📊 | **Trainingsanalyse** | Automatisch gespeicherte Trainingseinheiten mit Zeitstempeln und Positionsmatrix für eine fundierte Nachbesprechung. |
@@ -74,11 +75,33 @@ und regelkonforme Übergaben.
 
 `L1` `L2` `L3` `L4` `L5` `L6` **`L7 Knoten`** **`L8 Schlauch`** `L9`
 
+### 🏅 Leistungsspange – alle fünf Disziplinen
+
+Umschalten genügt: Aufstellung, Stoppuhr, Analyse und Wissensdatenbank zeigen dann die
+Leistungsspange — wahlweise als **Gruppe** (9) oder **Staffel** (6).
+
+| Disziplin | Erfassung | 4 Punkte (Gruppe) |
+|---|---|---|
+| **Schnelligkeitsübung** | Stoppuhr | bis 55 s |
+| **Kugelstoßen** | Gesamtweite | über 70 m |
+| **Staffellauf** | Stoppuhr | bis 3:30 |
+| **Löschangriff** | Bewertung 0–4 | sehr gut |
+| **Fragenbeantwortung** | Bewertung 0–4 | sehr gut |
+
+Dazu der **Gesamteindruck** aller fünf Wertungsrichter/-innen, abhakbare Nullwertungsgründe
+je Disziplin und ein Wertungsbogen, der die Gesamtpunktzahl und die Ausscheidekriterien
+nach den Richtlinien auswertet.
+
+> Grundlage sind die DJF-*Richtlinien zum Erwerb der Leistungsspange* und die *Erläuterungen
+> zur bundeseinheitlichen Durchführung und Bewertung*, beide **Stand 01.01.2024**.
+> Alle Regelwerte liegen gebündelt in `src/leistungsspange.js`.
+
 ### 📖 Wissensdatenbank — Beispielinhalte
 
 - **Knoten:** Mastwurf, Kreuzknoten, Zimmermannsschlag, Schotenstich
 - **Fehlerpunkteregeln:** 5 FP Übertreten, 10 FP falscher Knoten …
 - **Vollständige Ablaufbeschreibung** für alle 9 Trupppositionen
+- **Leistungsspange:** Ablauf und Nullwertungen je Disziplin, Bekleidung, Wertungstabelle sowie die sieben Wissensgebiete der Fragenbeantwortung als Gesprächsleitfaden
 
 ---
 
@@ -151,6 +174,12 @@ npm run dev
 ```
 
 Die App ist dann unter `http://localhost:5173` erreichbar.
+
+Tests laufen mit:
+
+```bash
+npm test
+```
 
 ---
 
