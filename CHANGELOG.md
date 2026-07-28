@@ -7,6 +7,15 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- **Leistungsspange der Deutschen Jugendfeuerwehr** als zweiter Wettbewerb neben dem Bundeswettbewerb. Ein Umschalter über allen vier Tabs wechselt zwischen beiden; Aufstellung, Stoppuhr, Analyse und Wissensdatenbank zeigen jeweils die passenden Inhalte
+  - Alle fünf Disziplinen mit der Wertungstabelle 0–4 Punkte: Schnelligkeitsübung und Staffellauf über die Stoppuhr, Kugelstoßen über die Gesamtweite, Löschangriff und Fragenbeantwortung als Bewertung durch die Wertungsrichter/-innen
+  - Wettbewerbsform Gruppe (9) und Staffel (6) mit je eigenen Positionen, Zeiten und Weiten
+  - Abhakbare Nullwertungsgründe je Disziplin — ein Häkchen setzt die Punktzahl auf 0
+  - Wertungsbogen im Analyse-Tab: Punkte je Disziplin, Gesamteindruck je Wertungsrichter/-in mit Durchschnitt, Gesamtpunktzahl sowie Bestanden/Ausgeschieden inklusive Begründung und Hinweis auf eine mögliche Wiederholung
+  - Wissensdatenbank mit Ablauf, Nullwertungen, Bekleidung und Wertungstabelle sowie den sieben Wissensgebieten der Fragenbeantwortung als Gesprächsleitfaden
+  - Aufstellung aus dem A-Teil übernehmen; Beobachtungshilfe für den Löschangriff auf Basis des A-Teil-Katalogs ohne Hindernisse
+  - Grundlage: DJF-Richtlinien zum Erwerb der Leistungsspange und Erläuterungen zur bundeseinheitlichen Durchführung, beide Stand 01.01.2024
+- Unit-Tests mit Vitest (`npm test`) für die Wertungslogik, die Zustands-Normalisierung und die Sync-Zusammenführung; laufen in der CI vor dem Build
 - Paralleler A- und B-Lauf in einer Instanz: ein Team misst den A-Teil, ein anderes gleichzeitig den B-Teil. Jedes Gerät wählt über den A/B-Umschalter lokal, welchen Lauf es bedient; ein „läuft"-Punkt und ein Parallel-Hinweis zeigen den jeweils anderen Lauf
 - Einfacher Einrichtungsweg über Supabase mit Assistent in der App (kein Build, kein Hosting nötig)
 - Austauschbares Backend: Supabase oder Firebase
@@ -25,6 +34,9 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 - `CONTRIBUTING.md` und `SECURITY.md`
 
 ### Changed
+- Der Stoppuhr-Modus (`mode`) ist nicht mehr auf A-/B-Teil beschränkt, sondern wird über eine Wettbewerbs-Registry aufgelöst. Bestehende Stände, Läufe und Aufstellungen bleiben unverändert; ältere Clients bleiben synchronisierbar, weil sie unbekannte Modus-Slots ignorieren
+- CSV-Export um die Spalten „Wettbewerb" und „LSP-Punkte" ergänzt (hinten angehängt, bestehende Spalten unverändert)
+- Positions-Matrix zeigt die Positionen des aktiven Wettbewerbs, statt alle Abschnitte nebeneinander
 - Sync-Banner blendet sich bei stabiler Verbindung automatisch aus
 - Barrierefreiheit verbessert (aria-Labels für Navigation, Timer, Wertung und Statusmeldungen)
 - Wettkampf-Wertung jetzt im Team: Fehlerpunkte, Wertung (an/aus) und Vorgabezeit können alle Betreuer gemeinsam erfassen, während die Zeitnahme weiterhin nur auf dem startenden Gerät bedient wird (entspricht mehreren Wertungsrichtern je Position)

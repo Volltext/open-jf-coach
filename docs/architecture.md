@@ -16,8 +16,11 @@ Browser
         ├── ShareTeam.jsx     # Einladungs-Link & QR-Code erzeugen
         ├── usePwaInstall.js  # PWA-Installations-Hinweis
         ├── domain.js         # Datenmodelle und Konstanten
-        ├── knowledge.js      # Statische Wissensdatenbank-Inhalte
-        ├── scoring.js        # Bewertungs- und Fehlerlogik
+        ├── competitions.js   # Registry beider Wettbewerbe (Modi, Bezeichnungen)
+        ├── knowledge.js      # Statische Wissensdatenbank-Inhalte (Bundeswettbewerb)
+        ├── lspKnowledge.js   # Wissensdatenbank-Inhalte der Leistungsspange
+        ├── scoring.js        # Bewertungs- und Fehlerlogik (Bundeswettbewerb)
+        ├── leistungsspange.js # Regelwerk und Wertungslogik der Leistungsspange
         ├── storage.js        # Lokaler Speicher (IndexedDB + localStorage)
         ├── backendConfig.js  # Backend-Konfiguration auflösen, Beitritts-Links
         ├── cloudSync.js      # Backend-unabhängige Sync-Schicht
@@ -60,12 +63,32 @@ bieten dieselbe Schnittstelle (`initSync(handlers)` → `{ pushState, dispose }`
 - **localStorage** (`jf-coach-backend-config`): Per Assistent gespeicherte Supabase-Konfiguration (nur einfacher Weg)
 
 ### Cloud-Sync
-- **Synchronisierter State:** `members`, `lineups`, `trainingLog`, `stopwatchDraft`
+- **Synchronisierter State:** `members`, `lineups`, `trainingLog`, `deletedRuns`, `stopwatchDrafts`, `lsp`
 - **Speicherort:**
   - Firebase: Dokument `teams/<teamId>/state/shared`
   - Supabase: eine Zeile der Tabelle `team_state` (`team_id`, `data` jsonb, `updated_at`)
-- **Konfliktauflösung:** Stoppuhr-State per `stopwatchVersion`-Versionsnummer, der Rest durch „letzter gewinnt"
+- **Konfliktauflösung:** Stoppuhr-State per `stopwatchVersion`-Versionsnummer, das Trainingsprotokoll per Lauf-ID mit `updatedAt`-Stempel und Tombstones, der Gesamteindruck feldweise (eine offene Wertung überschreibt nie eine gesetzte), der Rest durch „letzter gewinnt"
 - **Authentifizierung:** Firebase meldet jedes Gerät automatisch anonym an; Supabase nutzt den öffentlichen Publishable-/anon-Key
+
+## Wettbewerbe
+
+Die App unterstützt zwei Wettbewerbe, die sich denselben Bildschirm teilen. Sie
+bilden eine eigene Achse **neben** dem Stoppuhr-Modus:
+
+| Achse | Werte | Wo gespeichert |
+|---|---|---|
+| Wettbewerb | `bw`, `lsp` | `preferences.competition` (lokal, nicht synchronisiert) |
+| Modus | `a`, `b` sowie die fünf `lsp-*`-Disziplinen | Schlüssel in `stopwatchDrafts` (synchronisiert) |
+| Wettbewerbsform | `gruppe`, `staffel` | `lsp.variante` (synchronisiert) |
+
+`competitions.js` ist die einzige Stelle, die beide Wettbewerbe kennt; überall
+sonst wird über `MODES` bzw. die dortigen Helfer aufgelöst statt auf `'a'`/`'b'`
+zu verzweigen. Jede Disziplin hat einen eigenen Draft-Slot und läuft damit ohne
+Sonderweg durch die bestehende Sync-, Versions- und Controller-Mechanik.
+
+Die Erweiterung ist in beide Richtungen kompatibel: Ein älterer Client sendet nur
+`{ a, b }`, wodurch lokale LSP-Drafts erhalten bleiben; empfängt er zusätzliche
+Modus-Schlüssel, verwirft seine Normalisierung sie fehlerfrei.
 
 ## State-Flow
 
